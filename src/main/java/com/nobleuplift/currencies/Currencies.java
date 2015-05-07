@@ -11,7 +11,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import com.nobleuplift.currencies.entities.Account;
 import com.nobleuplift.currencies.entities.Currency;
 import com.nobleuplift.currencies.entities.Holding;
+import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
+import com.nobleuplift.currencies.entities.TransactionPK;
 import com.nobleuplift.currencies.entities.Unit;
 
 public class Currencies extends JavaPlugin {
@@ -26,7 +28,9 @@ public class Currencies extends JavaPlugin {
         List<Class<?>> list = new ArrayList<Class<?>>();
         list.add(Account.class);
         list.add(Currency.class);
+        list.add(HoldingPK.class);
         list.add(Holding.class);
+        list.add(TransactionPK.class);
         list.add(Transaction.class);
         list.add(Unit.class);
         return list;
