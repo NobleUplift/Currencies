@@ -1,38 +1,68 @@
 package com.nobleuplift.currencies.entities;
 
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import java.io.Serializable;
+import javax.persistence.*;
+
 
 /**
- * Created on 2015 May 1st at 09:11 PM.
+ * The persistent class for the currencies_holding database table.
  * 
- * @author Patrick
  */
 @Entity
 @Table(name="currencies_holding")
-public class Holding {
+@NamedQuery(name="Holding.findAll", query="SELECT h FROM Holding h")
+public class Holding implements Serializable {
+	private static final long serialVersionUID = 1L;
+
 	@EmbeddedId
-	private HoldingId holdingId;
+	private HoldingPK id;
+
+	@Column(nullable=false)
 	private long amount;
-	
+
+	//bi-directional many-to-one association to Account
+	@ManyToOne
+	@JoinColumn(name="account_id", nullable=false, insertable=false, updatable=false)
+	private Account account;
+
+	//bi-directional many-to-one association to Unit
+	@ManyToOne
+	@JoinColumn(name="unit_id", nullable=false, insertable=false, updatable=false)
+	private Unit unit;
+
 	public Holding() {
-		super();
 	}
-	
-	public HoldingId getHoldingId() {
-		return holdingId;
+
+	public HoldingPK getId() {
+		return this.id;
 	}
-	
-	public void setHoldingId(HoldingId holdingId) {
-		this.holdingId = holdingId;
+
+	public void setId(HoldingPK id) {
+		this.id = id;
 	}
-	
+
 	public long getAmount() {
-		return amount;
+		return this.amount;
 	}
-	
+
 	public void setAmount(long amount) {
 		this.amount = amount;
 	}
+
+	public Account getAccount() {
+		return this.account;
+	}
+
+	public void setAccount(Account account) {
+		this.account = account;
+	}
+
+	public Unit getUnit() {
+		return this.unit;
+	}
+
+	public void setUnit(Unit unit) {
+		this.unit = unit;
+	}
+
 }

@@ -1,25 +1,193 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.nobleuplift.currencies</groupId>
-  <artifactId>Currencies</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <packaging>jar</packaging>
+	<groupId>com.nobleuplift.currencies</groupId>
+	<artifactId>Currencies</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
 
-  <name>Currencies</name>
-  <url>http://maven.apache.org</url>
+	<name>Currencies</name>
+	<url>http://maven.apache.org</url>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<plugin.author>NobleUplift</plugin.author>
+		<plugin.website>https://nobleuplift.wordpress.com/</plugin.website>
+		<plugin.main>com.nobleuplift.currencies.Currencies</plugin.main>
+		
+		<currencies.create>/currencies create &lt;acronym&gt; &lt;name&gt; [prefix]]</currencies.create>
+		<currencies.delete>/currencies delete &lt;acronym&gt;</currencies.delete>
+		<currencies.addprime>/currencies addprime &lt;acronym&gt; &lt;symbol&gt; &lt;name&gt; [singular]</currencies.addprime>
+		<currencies.addparent>/currencies addparent &lt;acronym&gt; &lt;child&gt; &lt;multiplier&gt; &lt;symbol&gt; &lt;name&gt; [singular]</currencies.addparent>
+		<currencies.addchild>/currencies addchild &lt;acronym&gt; &lt;parent&gt; &lt;divisor&gt; &lt;symbol&gt; &lt;name&gt; [singular]</currencies.addchild>
+		<currencies.balance>/currencies balance [player] [currency]</currencies.balance>
+		<currencies.pay>/currencies pay &lt;player&gt; &lt;currency&gt; &lt;amount&gt;</currencies.pay>
+		<currencies.bill>/currencies bill &lt;player&gt; &lt;currency&gt; &lt;amount&gt;</currencies.bill>
+		<currencies.paybill>/currencies paybill &lt;transaction&gt;</currencies.paybill>
+		<currencies.credit>/currencies credit &lt;player&gt; &lt;currency&gt; &lt;amount&gt;</currencies.credit>
+		<currencies.debit>/currencies debit &lt;player&gt; &lt;currency&gt; &lt;amount&gt;</currencies.debit>
+		<currencies.bankrupt>/currencies bankrupt &lt;player&gt; [currency] [amount]</currencies.bankrupt>
+		
+		<ebean.version>3.3.1</ebean.version>
+	</properties>
+	
+	<repositories>
+		<repository>
+			<id>spigot-repo</id>
+			<url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
+		</repository><repository>
+			<id>vault-repo</id>
+			<url>http://nexus.theyeticave.net/content/repositories/pub_releases</url>
+		</repository>
+		<repository>
+			<id>sk89q-repo</id>
+			<url>http://maven.sk89q.com/repo/</url>
+		</repository>
+		<repository>
+			<id>avaje.org</id>
+			<url>http://www.avaje.org/archiva/repository/internal</url>
+		</repository>
+		<repository>
+			<id>oss.sonatype.org</id>
+			<name>OSS Sonatype Staging</name>
+			<url>https://oss.sonatype.org/content/groups/staging</url>
+		</repository>
+	</repositories>
 
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+	<dependencies>
+		<dependency>
+		  <groupId>org.spigotmc</groupId>
+		  <artifactId>spigot-api</artifactId>
+		  <version>1.8-R0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bukkit</groupId>
+			<artifactId>bukkit</artifactId>
+			<version>1.8-R0.1-SNAPSHOT</version>
+			<type>jar</type>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.milkbowl.vault</groupId>
+			<artifactId>Vault</artifactId>
+			<version>1.5.4</version>
+			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>com.sk89q</groupId>
+			<artifactId>worldedit</artifactId>
+			<version>5.5.7-SNAPSHOT</version>
+			<type>jar</type>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>5.1.35</version>
+		</dependency>
+		<dependency>  
+			<groupId>org.avaje.ebeanorm</groupId>  
+			<artifactId>avaje-ebeanorm</artifactId>  
+			<version>3.3.1</version>  
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.persistence</groupId>
+			<artifactId>eclipselink</artifactId>
+			<version>2.5.0-RC1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.eclipse.persistence</groupId>
+					<artifactId>commonj.sdo</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+	</dependencies>
+	<build>
+		<resources>
+			<resource>
+				<directory>src/main/java</directory>
+				<filtering>true</filtering>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>8</source>
+					<target>8</target>
+					<encoding>${project.build.sourceEncoding}</encoding>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<useSystemClassLoader>false</useSystemClassLoader>
+				</configuration>
+			</plugin>			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>compile</id>
+						<phase>process-ebean-enhancement</phase>
+						<configuration>
+							<tasks>
+								<property name="compile_classpath" refid="maven.compile.classpath" />
+								<echo
+									message="Ebean enhancing test classes debug level -----------------------------------" />
+								<echo message="Classpath: ${compile_classpath}" />
+								<taskdef name="ebeanEnhance"
+									classname="com.avaje.ebean.enhance.ant.AntEnhanceTask"
+									classpath="${compile_classpath}" />
+								<ebeanEnhance classSource="${project.build.testOutputDirectory}"
+									packages="com.nobleuplift.currencies.entities.**" transformArgs="debug=1" />
+							</tasks>
+							<encoding>UTF-8</encoding>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<showDeprecation>true</showDeprecation>
+					<showWarnings>true</showWarnings>
+					<executable>${env.JAVA_HOME_7}/bin/javac</executable>
+					<fork>true</fork>
+					<includes>
+						<include>**/*/*.class</include>
+						<include>config.yml</include>
+						<include>plugin.yml</include>
+					</includes>
+					<excludes>
+						<exclude>**/*/*.java</exclude>
+						<exclude>.gitattributes</exclude>
+						<exclude>.gitignore</exclude>
+					</excludes>
+					<archive>
+						<addMavenDescriptor>false</addMavenDescriptor>
+					</archive>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>

@@ -1,0 +1,27 @@
+name: ${project.name}
+version: ${project.version}
+description: The most complex currency plugin ever made for Minecraft!
+
+author: ${plugin.author}
+website: ${plugin.website}
+
+main: ${plugin.main}
+database: true
+
+commands:
+    currencies:
+        description: 
+        aliases: cur
+        usage: | 
+            ${currencies.create}
+            ${currencies.delete}
+            ${currencies.addprime}
+            ${currencies.addparent}
+            ${currencies.addchild}
+            ${currencies.balance}
+            ${currencies.pay}
+            ${currencies.bill}
+            ${currencies.paybill}
+            ${currencies.credit}
+            ${currencies.debit}
+            ${currencies.bankrupt}

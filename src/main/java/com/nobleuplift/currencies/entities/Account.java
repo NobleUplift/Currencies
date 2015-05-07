@@ -1,47 +1,190 @@
 package com.nobleuplift.currencies.entities;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import java.io.Serializable;
+import javax.persistence.*;
+import java.sql.Timestamp;
+import java.util.List;
+
 
 /**
- * Created on 2015 May 1st at 09:11 PM.
+ * The persistent class for the currencies_account database table.
  * 
- * @author Patrick
  */
 @Entity
 @Table(name="currencies_account")
-public class Account {
+@NamedQuery(name="Account.findAll", query="SELECT a FROM Account a")
+public class Account implements Serializable {
+	private static final long serialVersionUID = 1L;
+
 	@Id
-	private long id;
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(updatable=false, unique=true, nullable=false)
+	private Long id;
+
+	@Column(name="date_created", nullable=false)
+	private Timestamp dateCreated;
+
+	@Column(name="date_modified", nullable=false)
+	private Timestamp dateModified;
+
+	@Column(nullable=false, length=45)
 	private String name;
+
+	@Column(length=32)
 	private String uuid;
-	
+
+	//bi-directional many-to-many association to Account
+	@ManyToMany
+	@JoinTable(
+		name="currencies_holder"
+		, joinColumns={
+			@JoinColumn(name="holdee_id", nullable=false)
+			}
+		, inverseJoinColumns={
+			@JoinColumn(name="holder_id", nullable=false)
+			}
+		)
+	private List<Account> holder;
+
+	//bi-directional many-to-many association to Account
+	@ManyToMany(mappedBy="holder")
+	private List<Account> holdee;
+
+	//bi-directional many-to-one association to Holding
+	@OneToMany(mappedBy="account")
+	private List<Holding> holdings;
+
+	//bi-directional many-to-one association to Transaction
+	@OneToMany(mappedBy="sender")
+	private List<Transaction> senderTransactions;
+
+	//bi-directional many-to-one association to Transaction
+	@OneToMany(mappedBy="recipient")
+	private List<Transaction> recipientTransactions;
+
 	public Account() {
-		super();
 	}
-	
-	public long getId() {
-		return id;
+
+	public Long getId() {
+		return this.id;
 	}
-	
-	public void setId(long id) {
+
+	public void setId(Long id) {
 		this.id = id;
 	}
-	
-	public String getName() {
-		return name;
+
+	public Timestamp getDateCreated() {
+		return this.dateCreated;
 	}
-	
+
+	public void setDateCreated(Timestamp dateCreated) {
+		this.dateCreated = dateCreated;
+	}
+
+	public Timestamp getDateModified() {
+		return this.dateModified;
+	}
+
+	public void setDateModified(Timestamp dateModified) {
+		this.dateModified = dateModified;
+	}
+
+	public String getName() {
+		return this.name;
+	}
+
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 	public String getUuid() {
-		return uuid;
+		return this.uuid;
 	}
-	
+
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}
+
+	public List<Account> getHolder() {
+		return this.holder;
+	}
+
+	public void setHolder(List<Account> holder) {
+		this.holder = holder;
+	}
+
+	public List<Account> getHoldee() {
+		return this.holdee;
+	}
+
+	public void setHoldee(List<Account> holdee) {
+		this.holdee = holdee;
+	}
+
+	public List<Holding> getHoldings() {
+		return this.holdings;
+	}
+
+	public void setHoldings(List<Holding> holdings) {
+		this.holdings = holdings;
+	}
+
+	public Holding addHolding(Holding holding) {
+		getHoldings().add(holding);
+		holding.setAccount(this);
+
+		return holding;
+	}
+
+	public Holding removeHolding(Holding holding) {
+		getHoldings().remove(holding);
+		holding.setAccount(null);
+
+		return holding;
+	}
+
+	public List<Transaction> getSenderTransactions() {
+		return this.senderTransactions;
+	}
+
+	public void setSenderTransactions(List<Transaction> senderTransactions) {
+		this.senderTransactions = senderTransactions;
+	}
+
+	public Transaction addSenderTransaction(Transaction senderTransaction) {
+		getSenderTransactions().add(senderTransaction);
+		senderTransaction.setSender(this);
+
+		return senderTransaction;
+	}
+
+	public Transaction removeSenderTransaction(Transaction senderTransaction) {
+		getSenderTransactions().remove(senderTransaction);
+		senderTransaction.setSender(null);
+
+		return senderTransaction;
+	}
+
+	public List<Transaction> getRecipientTransactions() {
+		return this.recipientTransactions;
+	}
+
+	public void setRecipientTransactions(List<Transaction> recipientTransactions) {
+		this.recipientTransactions = recipientTransactions;
+	}
+
+	public Transaction addRecipientTransaction(Transaction recipientTransaction) {
+		getRecipientTransactions().add(recipientTransaction);
+		recipientTransaction.setRecipient(this);
+
+		return recipientTransaction;
+	}
+
+	public Transaction removeRecipientTransaction(Transaction recipientTransaction) {
+		getRecipientTransactions().remove(recipientTransaction);
+		recipientTransaction.setRecipient(null);
+
+		return recipientTransaction;
+	}
+
 }

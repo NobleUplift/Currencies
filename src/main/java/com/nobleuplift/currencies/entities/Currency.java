@@ -1,94 +1,138 @@
 package com.nobleuplift.currencies.entities;
 
+import java.io.Serializable;
+import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.List;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 
 /**
- * Created on 2015 May 1st at 09:11 PM.
+ * The persistent class for the currencies_currency database table.
  * 
- * @author Patrick
  */
 @Entity
 @Table(name="currencies_currency")
-public class Currency {
+@NamedQuery(name="Currency.findAll", query="SELECT c FROM Currency c")
+public class Currency implements Serializable {
+	private static final long serialVersionUID = 1L;
+
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(updatable=false, unique=true, nullable=false)
 	private short id;
-	private String name;
+
+	@Column(nullable=false, length=3)
 	private String acronym;
-	private boolean prefix;
+
+	@Column(name="date_created", nullable=false)
 	private Timestamp dateCreated;
-	private Timestamp dateModified;
+
+	@Column(name="date_deleted")
 	private Timestamp dateDeleted;
+
+	@Column(name="date_modified", nullable=false)
+	private Timestamp dateModified;
+
+	@Column(nullable=false)
 	private boolean deleted;
-	
+
+	@Column(nullable=false, length=64)
+	private String name;
+
+	@Column(nullable=false)
+	private boolean prefix;
+
+	//bi-directional many-to-one association to Unit
+	@OneToMany(mappedBy="currency")
+	private List<Unit> units;
+
 	public Currency() {
-		super();
 	}
 
 	public short getId() {
-		return id;
+		return this.id;
 	}
 
 	public void setId(short id) {
 		this.id = id;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
 	public String getAcronym() {
-		return acronym;
+		return this.acronym;
 	}
 
 	public void setAcronym(String acronym) {
 		this.acronym = acronym;
 	}
 
-	public boolean isPrefix() {
-		return prefix;
-	}
-
-	public void setPrefix(boolean prefix) {
-		this.prefix = prefix;
-	}
-
 	public Timestamp getDateCreated() {
-		return dateCreated;
+		return this.dateCreated;
 	}
 
 	public void setDateCreated(Timestamp dateCreated) {
 		this.dateCreated = dateCreated;
 	}
 
-	public Timestamp getDateModified() {
-		return dateModified;
-	}
-
-	public void setDateModified(Timestamp dateModified) {
-		this.dateModified = dateModified;
-	}
-
 	public Timestamp getDateDeleted() {
-		return dateDeleted;
+		return this.dateDeleted;
 	}
 
 	public void setDateDeleted(Timestamp dateDeleted) {
 		this.dateDeleted = dateDeleted;
 	}
 
-	public boolean isDeleted() {
-		return deleted;
+	public Timestamp getDateModified() {
+		return this.dateModified;
+	}
+
+	public void setDateModified(Timestamp dateModified) {
+		this.dateModified = dateModified;
+	}
+
+	public boolean getDeleted() {
+		return this.deleted;
 	}
 
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
 	}
+
+	public String getName() {
+		return this.name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public boolean getPrefix() {
+		return this.prefix;
+	}
+
+	public void setPrefix(boolean prefix) {
+		this.prefix = prefix;
+	}
+
+	public List<Unit> getUnits() {
+		return this.units;
+	}
+
+	public void setUnits(List<Unit> units) {
+		this.units = units;
+	}
+
+	public Unit addUnit(Unit unit) {
+		getUnits().add(unit);
+		unit.setCurrency(this);
+
+		return unit;
+	}
+
+	public Unit removeUnit(Unit unit) {
+		getUnits().remove(unit);
+		unit.setCurrency(null);
+
+		return unit;
+	}
+
 }
