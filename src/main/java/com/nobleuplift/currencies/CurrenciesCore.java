@@ -102,7 +102,7 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
 		}
 		
-		Unit childUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("symbol", child).findUnique();
+		Unit childUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("name", child).findUnique();
 		if (childUnit == null) {
 			throw new CurrenciesException("Child unit " + child + " does not exist for currency " + acronym + ".");
 		}
@@ -127,7 +127,7 @@ public final class CurrenciesCore {
 		
 		u = new Unit();
 		u.setCurrency(c);
-		u.setChildUnit(null);
+		u.setChildUnit(childUnit);
 		u.setName(name);
 		u.setSingular(singular);
 		u.setSymbol(symbol);
@@ -165,19 +165,6 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Unit " + parent + " already has a child. Units can only have one child.");
 		}
 		
-		Unit childUnit = new Unit();
-		childUnit.setCurrency(c);
-		childUnit.setChildUnit(null);
-		childUnit.setName(name);
-		childUnit.setSingular(singular);
-		childUnit.setSymbol(symbol);
-		childUnit.setPrime(false);
-		childUnit.setChildMultiples(0);
-		childUnit.setBaseMultiples(0);
-		childUnit.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
-		childUnit.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
-		Currencies.getInstance().getDatabase().save(childUnit);
-		
 		List<Unit> units = c.getUnits();
 		for (Unit u : units) {
 			// Unit is the parent
@@ -192,6 +179,22 @@ public final class CurrenciesCore {
 			}
 			Currencies.getInstance().getDatabase().save(u);
 		}
+		
+		Unit childUnit = new Unit();
+		childUnit.setCurrency(c);
+		childUnit.setChildUnit(null);
+		childUnit.setName(name);
+		childUnit.setSingular(singular);
+		childUnit.setSymbol(symbol);
+		childUnit.setPrime(false);
+		childUnit.setChildMultiples(0);
+		childUnit.setBaseMultiples(0);
+		childUnit.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+		childUnit.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+		Currencies.getInstance().getDatabase().save(childUnit);
+		
+		parentUnit.setChildUnit(childUnit);
+		Currencies.getInstance().getDatabase().save(parentUnit);
 		
 	}
 	
