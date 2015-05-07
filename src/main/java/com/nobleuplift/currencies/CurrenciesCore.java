@@ -37,7 +37,7 @@ public final class CurrenciesCore {
 		c.setName(name);
 		c.setAcronym(acronym);
 		c.setPrefix(prefix);
-		c.setDateModified((Timestamp) Calendar.getInstance().getTime());
+		c.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(c);
 	}
 	
@@ -48,7 +48,7 @@ public final class CurrenciesCore {
 		}
 		
 		c.setDeleted(true);
-		c.setDateDeleted((Timestamp) Calendar.getInstance().getTime());
+		c.setDateDeleted(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(c);
 	}
 	
@@ -77,7 +77,7 @@ public final class CurrenciesCore {
 		//u.setBase(true);
 		u.setChildMultiples(0);
 		u.setBaseMultiples(0);
-		u.setDateModified((Timestamp) Calendar.getInstance().getTime());
+		u.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(u);
 	}
 	
@@ -128,7 +128,7 @@ public final class CurrenciesCore {
 		//u.setBase(false);
 		u.setChildMultiples(multiplier);
 		u.setBaseMultiples(multiples);
-		u.setDateModified((Timestamp) Calendar.getInstance().getTime());
+		u.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(u);
 	}
 	
@@ -166,7 +166,7 @@ public final class CurrenciesCore {
 		childUnit.setPrime(false);
 		childUnit.setChildMultiples(0);
 		childUnit.setBaseMultiples(0);
-		childUnit.setDateModified((Timestamp) Calendar.getInstance().getTime());
+		childUnit.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(childUnit);
 		
 		List<Unit> units = c.getUnits();
