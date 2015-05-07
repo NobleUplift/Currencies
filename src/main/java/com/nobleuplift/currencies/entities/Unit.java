@@ -118,6 +118,10 @@ public class Unit implements Serializable {
 		this.name = name;
 	}
 
+	public boolean isPrime() {
+		return this.prime;
+	}
+
 	public boolean getPrime() {
 		return this.prime;
 	}

@@ -80,6 +80,10 @@ public class Transaction implements Serializable {
 		this.datePaid = datePaid;
 	}
 
+	public boolean isPaid() {
+		return this.paid;
+	}
+
 	public boolean getPaid() {
 		return this.paid;
 	}
