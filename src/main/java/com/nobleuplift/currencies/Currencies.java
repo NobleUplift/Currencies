@@ -30,8 +30,10 @@ public class Currencies extends JavaPlugin {
 			if (args.length == 0) {
 				sender.sendMessage("Please refer to the guide.");
 				//CurrenciesCommand.help(sender);
+				return true;
 			} else {
 				CurrenciesCommand.subcommands(sender, args);
+				return true;
 			}
 		}
 		
