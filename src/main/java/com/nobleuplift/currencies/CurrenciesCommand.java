@@ -37,6 +37,10 @@ public final class CurrenciesCommand {
 	}
 	
 	protected static void subcommands(CommandSender sender, String[] args) {
+		for (String arg : args) {
+			System.out.println(args);
+		}
+		
 		switch (args[0].toLowerCase()) {
 			case "create":
 				if (args.length == 3) {
@@ -239,6 +243,7 @@ public final class CurrenciesCommand {
 				break;
 			
 			default:
+				sender.sendMessage("Invalid subcommand: ");
 				help(sender);
 		}
 	}
