@@ -24,11 +24,11 @@ public final class CurrenciesCore {
 		if (acronym.length() != 3) {
 			throw new CurrenciesException("All currency acronyms must be three characters.");
 		}
-		Currency c = Ebean.find(Currency.class).where().eq("acronym", acronym).findUnique();
+		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c != null) {
 			throw new CurrenciesException(acronym + " has been taken by another currency.");
 		}
-		c = Ebean.find(Currency.class).where().eq("name", name).findUnique();
+		c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("name", name).findUnique();
 		if (c != null) {
 			throw new CurrenciesException(name + " has been taken by another currency.");
 		}
@@ -38,18 +38,18 @@ public final class CurrenciesCore {
 		c.setAcronym(acronym);
 		c.setPrefix(prefix);
 		c.setDateModified((Timestamp) Calendar.getInstance().getTime());
-		Ebean.save(c);
+		Currencies.getInstance().getDatabase().save(c);
 	}
 	
 	public static void deleteCurrency(String acronym) throws CurrenciesException {
-		Currency c = Ebean.find(Currency.class).where().eq("acronym", acronym).findUnique();
+		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Could not find currency with acronym " + acronym + ".");
 		}
 		
 		c.setDeleted(true);
 		c.setDateDeleted((Timestamp) Calendar.getInstance().getTime());
-		Ebean.save(c);
+		Currencies.getInstance().getDatabase().save(c);
 	}
 	
 	public static void addPrime(String acronym, String symbol, String name) throws CurrenciesException {
@@ -58,12 +58,12 @@ public final class CurrenciesCore {
 
 	@Transactional
 	public static void addPrime(String acronym, String symbol, String name, String singular) throws CurrenciesException {
-		Currency c = Ebean.find(Currency.class).where().eq("acronym", acronym).findUnique();
+		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
-		Unit u = Ebean.find(Unit.class).where().eq("currencyId", c.getId()).eq("prime", true).findUnique();
+		Unit u = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currencyId", c.getId()).eq("prime", true).findUnique();
 		if (u != null) {
 			throw new CurrenciesException("Currency " + acronym + " already has a prime unit of currency.");
 		}
@@ -78,7 +78,7 @@ public final class CurrenciesCore {
 		u.setChildMultiples(0);
 		u.setBaseMultiples(0);
 		u.setDateModified((Timestamp) Calendar.getInstance().getTime());
-		Ebean.save(u);
+		Currencies.getInstance().getDatabase().save(u);
 	}
 	
 	public static void addParent(String acronym, String child, int multiplier, String symbol, String name) throws CurrenciesException {
@@ -87,29 +87,29 @@ public final class CurrenciesCore {
 
 	@Transactional
 	public static void addParent(String acronym, String child, int multiplier, String symbol, String name, String singular) throws CurrenciesException {
-		Currency c = Ebean.find(Currency.class).where().eq("acronym", acronym).findUnique();
+		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
-		Unit prime = Ebean.find(Unit.class).where().eq("currencyId", c.getId()).eq("prime", true).findUnique();
+		Unit prime = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currencyId", c.getId()).eq("prime", true).findUnique();
 		if (prime == null) {
 			throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
 		}
 		
-		Unit childUnit = Ebean.find(Unit.class).where().eq("currencyId", c.getId()).eq("symbol", child).findUnique();
+		Unit childUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currencyId", c.getId()).eq("symbol", child).findUnique();
 		if (childUnit == null) {
 			throw new CurrenciesException("Child unit " + child + " does not exist for currency " + acronym + ".");
 		}
 		
-		Unit u = Ebean.find(Unit.class).where()
+		Unit u = Currencies.getInstance().getDatabase().find(Unit.class).where()
 			.eq("currencyId", c.getId())
 			.eq("symbol", symbol)
 			.eq("name", name)
 			.findUnique();
 		
 		// TODO: Find out how to validate this later
-		/*Unit singularUnit = Ebean.find(Unit.class).where()
+		/*Unit singularUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
 			.eq("currencyId", c.getId())
 			.eq("singular", singular)
 			.findUnique();*/
@@ -129,7 +129,7 @@ public final class CurrenciesCore {
 		u.setChildMultiples(multiplier);
 		u.setBaseMultiples(multiples);
 		u.setDateModified((Timestamp) Calendar.getInstance().getTime());
-		Ebean.save(u);
+		Currencies.getInstance().getDatabase().save(u);
 	}
 	
 	public static void addChild(String acronym, String parent, int divisor, String symbol, String name) throws CurrenciesException {
@@ -138,17 +138,17 @@ public final class CurrenciesCore {
 
 	@Transactional
 	public static void addChild(String acronym, String parent, int divisor, String symbol, String name, String singular) throws CurrenciesException {
-		Currency c = Ebean.find(Currency.class).where().eq("acronym", acronym).findUnique();
+		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
-		Unit prime = Ebean.find(Unit.class).where().eq("currencyId", c.getId()).eq("prime", true).findUnique();
+		Unit prime = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currencyId", c.getId()).eq("prime", true).findUnique();
 		if (prime == null) {
 			throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
 		}
 		
-		Unit parentUnit = Ebean.find(Unit.class).where().eq("currencyId", c.getId()).eq("name", parent).findUnique();
+		Unit parentUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currencyId", c.getId()).eq("name", parent).findUnique();
 		if (parentUnit == null) {
 			throw new CurrenciesException("Unit " + parent + " does not exist.");
 		}
@@ -167,7 +167,7 @@ public final class CurrenciesCore {
 		childUnit.setChildMultiples(0);
 		childUnit.setBaseMultiples(0);
 		childUnit.setDateModified((Timestamp) Calendar.getInstance().getTime());
-		Ebean.save(childUnit);
+		Currencies.getInstance().getDatabase().save(childUnit);
 		
 		List<Unit> units = c.getUnits();
 		for (Unit u : units) {
@@ -181,7 +181,7 @@ public final class CurrenciesCore {
 			} else {
 				u.setBaseMultiples(u.getBaseMultiples() * divisor);
 			}
-			Ebean.save(u);
+			Currencies.getInstance().getDatabase().save(u);
 		}
 		
 	}

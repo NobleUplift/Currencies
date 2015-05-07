@@ -6,12 +6,18 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Currencies extends JavaPlugin {
+	protected static Currencies instance;
+	
+	protected static Currencies getInstance() {
+		return instance;
+	}
+	
 	@EventHandler
 	public void onEnable() {
+		instance = this;
+		
 		getConfig().options().copyDefaults(false);
 		saveConfig();
-		
-		getDatabase();
 		
 		System.out.print("[Currencies] Enabled.");
 	}
