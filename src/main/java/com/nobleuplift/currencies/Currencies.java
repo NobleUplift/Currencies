@@ -1,9 +1,18 @@
 package com.nobleuplift.currencies;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import com.nobleuplift.currencies.entities.Account;
+import com.nobleuplift.currencies.entities.Currency;
+import com.nobleuplift.currencies.entities.Holding;
+import com.nobleuplift.currencies.entities.Transaction;
+import com.nobleuplift.currencies.entities.Unit;
 
 public class Currencies extends JavaPlugin {
 	protected static Currencies instance;
@@ -11,6 +20,17 @@ public class Currencies extends JavaPlugin {
 	protected static Currencies getInstance() {
 		return instance;
 	}
+	
+    @Override
+    public List<Class<?>> getDatabaseClasses() {
+        List<Class<?>> list = new ArrayList<Class<?>>();
+        list.add(Account.class);
+        list.add(Currency.class);
+        list.add(Holding.class);
+        list.add(Transaction.class);
+        list.add(Unit.class);
+        return list;
+    }
 	
 	@EventHandler
 	public void onEnable() {
