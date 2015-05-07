@@ -66,7 +66,7 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
-		Unit u = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currencyId", c.getId()).eq("prime", true).findUnique();
+		Unit u = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
 		if (u != null) {
 			throw new CurrenciesException("Currency " + acronym + " already has a prime unit of currency.");
 		}
@@ -97,12 +97,12 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
-		Unit prime = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currencyId", c.getId()).eq("prime", true).findUnique();
+		Unit prime = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
 		if (prime == null) {
 			throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
 		}
 		
-		Unit childUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currencyId", c.getId()).eq("symbol", child).findUnique();
+		Unit childUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("symbol", child).findUnique();
 		if (childUnit == null) {
 			throw new CurrenciesException("Child unit " + child + " does not exist for currency " + acronym + ".");
 		}
@@ -151,12 +151,12 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
-		Unit prime = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currencyId", c.getId()).eq("prime", true).findUnique();
+		Unit prime = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
 		if (prime == null) {
 			throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
 		}
 		
-		Unit parentUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currencyId", c.getId()).eq("name", parent).findUnique();
+		Unit parentUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("name", parent).findUnique();
 		if (parentUnit == null) {
 			throw new CurrenciesException("Unit " + parent + " does not exist.");
 		}
