@@ -25,18 +25,18 @@ public class Currencies extends JavaPlugin {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		String command = cmd.getName().toLowerCase();
+		getLogger().info(command);
 		
 		if (command.equals("currency") || command.equals("cur")) {
 			if (args.length == 0) {
 				sender.sendMessage("Please refer to the guide.");
 				//CurrenciesCommand.help(sender);
-				return true;
 			} else {
 				CurrenciesCommand.subcommands(sender, args);
-				return true;
 			}
+			return true;
+		} else {
+			return false;
 		}
-		
-		return false;
 	}
 }
