@@ -71,9 +71,17 @@ public final class CurrenciesCommand {
 			
 			case "addprime":
 				if (args.length == 4) {
-					
+					try {
+						CurrenciesCore.addPrime(args[1], args[2], args[3]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else if (args.length == 5) {
-					
+					try {
+						CurrenciesCore.addPrime(args[1], args[2], args[3], args[4]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else {
 					sender.sendMessage(CURRENCIES_ADDPRIME);
 				}
@@ -81,9 +89,18 @@ public final class CurrenciesCommand {
 			
 			case "addparent":
 				if (args.length == 6) {
-					
+					// TODO: Test parseInt
+					try {
+						CurrenciesCore.addParent(args[1], args[2], Integer.parseInt(args[3]), args[4], args[5]);
+					} catch (NumberFormatException | CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else if (args.length == 7) {
-					
+					try {
+						CurrenciesCore.addParent(args[1], args[2], Integer.parseInt(args[3]), args[4], args[5], args[6]);
+					} catch (NumberFormatException | CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else {
 					sender.sendMessage(CURRENCIES_ADDPARENT);
 				}
@@ -91,9 +108,17 @@ public final class CurrenciesCommand {
 			
 			case "addchild":
 				if (args.length == 6) {
-					
+					try {
+						CurrenciesCore.addChild(args[1], args[2], Integer.parseInt(args[3]), args[4], args[5]);
+					} catch (NumberFormatException | CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else if (args.length == 7) {
-					
+					try {
+						CurrenciesCore.addChild(args[1], args[2], Integer.parseInt(args[3]), args[4], args[5], args[6]);
+					} catch (NumberFormatException | CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else {
 					sender.sendMessage(CURRENCIES_ADDCHILD);
 				}
@@ -101,11 +126,23 @@ public final class CurrenciesCommand {
 			
 			case "balance":
 				if (args.length == 1) {
-					
+					try {
+						CurrenciesCore.balance();
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else if (args.length == 2) {
-					
+					try {
+						CurrenciesCore.balance(args[1]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else if (args.length == 3) {
-					
+					try {
+						CurrenciesCore.balance(args[1], args[2]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else {
 					sender.sendMessage(CURRENCIES_BALANCE);
 				}
@@ -125,15 +162,29 @@ public final class CurrenciesCommand {
 			
 			case "bill":
 				if (args.length == 4) {
-					
+					try {
+						CurrenciesCore.bill(args[1], args[2], args[3]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else {
 					sender.sendMessage(CURRENCIES_BILL);
 				}
 				break;
 			
 			case "paybill":
-				if (args.length == 2) {
-					
+				if (args.length == 1) {
+					try {
+						CurrenciesCore.paybill();
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
+				} else if (args.length == 2) {
+					try {
+						CurrenciesCore.paybill(args[1]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else {
 					sender.sendMessage(CURRENCIES_PAYBILL);
 				}
@@ -141,7 +192,11 @@ public final class CurrenciesCommand {
 			
 			case "credit":
 				if (args.length == 4) {
-					
+					try {
+						CurrenciesCore.credit(args[1], args[2], args[3]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else {
 					sender.sendMessage(CURRENCIES_CREDIT);
 				}
@@ -149,15 +204,35 @@ public final class CurrenciesCommand {
 			
 			case "debit":
 				if (args.length == 4) {
-					
+					try {
+						CurrenciesCore.debit(args[1], args[2], args[3]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else {
 					sender.sendMessage(CURRENCIES_DEBIT);
 				}
 				break;
 			
 			case "bankrupt":
-				if (args.length > 1 && args.length < 5) {
-					
+				if (args.length == 2) {
+					try {
+						CurrenciesCore.bankrupt(args[1]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
+				} else if (args.length == 3) {
+					try {
+						CurrenciesCore.bankrupt(args[1], args[2]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
+				} else if (args.length == 4) {
+					try {
+						CurrenciesCore.bankrupt(args[1], args[2], args[3]);
+					} catch (CurrenciesException e) {
+						sender.sendMessage(e.getMessage());
+					}
 				} else {
 					sender.sendMessage(CURRENCIES_BANKRUPT);
 				}

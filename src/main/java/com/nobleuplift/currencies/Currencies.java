@@ -29,10 +29,8 @@ public class Currencies extends JavaPlugin {
 		if (command.equals("currency") || command.equals("cur")) {
 			if (args.length == 0) {
 				CurrenciesCommand.help(sender);
-			} else if (args.length == 1) {
-				CurrenciesCommand.subcommands(sender, args);
 			} else {
-				
+				CurrenciesCommand.subcommands(sender, args);
 			}
 		}
 		
