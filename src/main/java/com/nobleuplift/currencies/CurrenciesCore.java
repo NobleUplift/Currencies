@@ -167,9 +167,8 @@ public final class CurrenciesCore {
 		
 		List<Unit> units = c.getUnits();
 		for (Unit u : units) {
-			// Unit is the parent
-			if (u.getChildMultiples() == 0) {
-				u.setChildMultiples(divisor);
+			if (u.getId() == parentUnit.getId()) {
+				continue;
 			}
 			
 			if (u.getBaseMultiples() == 0) {
@@ -194,6 +193,7 @@ public final class CurrenciesCore {
 		Currencies.getInstance().getDatabase().save(childUnit);
 		
 		parentUnit.setChildUnit(childUnit);
+		parentUnit.setChildMultiples(divisor);
 		Currencies.getInstance().getDatabase().save(parentUnit);
 		
 	}

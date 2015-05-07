@@ -55,12 +55,10 @@ public class Currencies extends JavaPlugin {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		String command = cmd.getName().toLowerCase();
-		getLogger().info(command);
 		
 		if (command.equals("currencies")) {
 			if (args.length == 0) {
-				sender.sendMessage("Please refer to the guide.");
-				//CurrenciesCommand.help(sender);
+				CurrenciesCommand.help(sender);
 			} else {
 				CurrenciesCommand.subcommands(sender, args);
 			}
