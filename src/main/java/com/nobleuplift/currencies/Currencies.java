@@ -27,7 +27,7 @@ public class Currencies extends JavaPlugin {
 		String command = cmd.getName().toLowerCase();
 		getLogger().info(command);
 		
-		if (command.equals("currency") || command.equals("cur")) {
+		if (command.equals("currencies")) {
 			if (args.length == 0) {
 				sender.sendMessage("Please refer to the guide.");
 				//CurrenciesCommand.help(sender);
