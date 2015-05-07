@@ -108,14 +108,14 @@ public final class CurrenciesCore {
 		}
 		
 		Unit u = Currencies.getInstance().getDatabase().find(Unit.class).where()
-			.eq("currencyId", c.getId())
+			.eq("currency_id", c.getId())
 			.eq("symbol", symbol)
 			.eq("name", name)
 			.findUnique();
 		
 		// TODO: Find out how to validate this later
 		/*Unit singularUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
-			.eq("currencyId", c.getId())
+			.eq("currency_id", c.getId())
 			.eq("singular", singular)
 			.findUnique();*/
 		
