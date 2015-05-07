@@ -28,7 +28,8 @@ public class Currencies extends JavaPlugin {
 		
 		if (command.equals("currency") || command.equals("cur")) {
 			if (args.length == 0) {
-				CurrenciesCommand.help(sender);
+				sender.sendMessage("Please refer to the guide.");
+				//CurrenciesCommand.help(sender);
 			} else {
 				CurrenciesCommand.subcommands(sender, args);
 			}
