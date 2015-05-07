@@ -107,6 +107,10 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Child unit " + child + " does not exist for currency " + acronym + ".");
 		}
 		
+		if (symbol.length() > 2) {
+			throw new CurrenciesException("Symbol can be no more than two characters.");
+		}
+		
 		Unit u = Currencies.getInstance().getDatabase().find(Unit.class).where()
 			.eq("currency_id", c.getId())
 			.eq("symbol", symbol)
@@ -165,6 +169,10 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Unit " + parent + " already has a child. Units can only have one child.");
 		}
 		
+		if (symbol.length() > 2) {
+			throw new CurrenciesException("Symbol can be no more than two characters.");
+		}
+		
 		List<Unit> units = c.getUnits();
 		for (Unit u : units) {
 			if (u.getId() == parentUnit.getId()) {
@@ -194,6 +202,7 @@ public final class CurrenciesCore {
 		
 		parentUnit.setChildUnit(childUnit);
 		parentUnit.setChildMultiples(divisor);
+		parentUnit.setBaseMultiples(divisor);
 		Currencies.getInstance().getDatabase().save(parentUnit);
 		
 	}
