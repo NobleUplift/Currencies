@@ -70,13 +70,7 @@ public final class CurrenciesCommand {
 				break;
 			
 			case "addprime":
-				if (args.length == 4) {
-					try {
-						CurrenciesCore.addPrime(args[1], args[2], args[3]);
-					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
-					}
-				} else if (args.length == 5) {
+				if (args.length == 5) {
 					try {
 						CurrenciesCore.addPrime(args[1], args[2], args[3], args[4]);
 					} catch (CurrenciesException e) {
@@ -88,17 +82,12 @@ public final class CurrenciesCommand {
 				break;
 			
 			case "addparent":
-				if (args.length == 6) {
-					// TODO: Test parseInt
+				if (args.length == 7) {
 					try {
-						CurrenciesCore.addParent(args[1], args[2], Integer.parseInt(args[3]), args[4], args[5]);
-					} catch (NumberFormatException | CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
-					}
-				} else if (args.length == 7) {
-					try {
-						CurrenciesCore.addParent(args[1], args[2], Integer.parseInt(args[3]), args[4], args[5], args[6]);
-					} catch (NumberFormatException | CurrenciesException e) {
+						CurrenciesCore.addParent(args[1], args[2], args[3], args[4], args[5], Integer.parseInt(args[6]));
+					} catch (NumberFormatException e) {
+						sender.sendMessage("Multiplier must be an integer.");
+					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}
 				} else {
@@ -107,16 +96,12 @@ public final class CurrenciesCommand {
 				break;
 			
 			case "addchild":
-				if (args.length == 6) {
+				if (args.length == 7) {
 					try {
-						CurrenciesCore.addChild(args[1], args[2], Integer.parseInt(args[3]), args[4], args[5]);
-					} catch (NumberFormatException | CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
-					}
-				} else if (args.length == 7) {
-					try {
-						CurrenciesCore.addChild(args[1], args[2], Integer.parseInt(args[3]), args[4], args[5], args[6]);
-					} catch (NumberFormatException | CurrenciesException e) {
+						CurrenciesCore.addChild(args[1], args[2], args[3], args[4], args[5], Integer.parseInt(args[6]));
+					} catch (NumberFormatException e) {
+						sender.sendMessage("Divisor must be an integer.");
+					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}
 				} else {

@@ -54,13 +54,9 @@ public final class CurrenciesCore {
 		c.setDateDeleted(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(c);
 	}
-	
-	public static void addPrime(String acronym, String symbol, String name) throws CurrenciesException {
-		addPrime(acronym, symbol, name, name);
-	}
 
 	@Transactional
-	public static void addPrime(String acronym, String symbol, String name, String singular) throws CurrenciesException {
+	public static void addPrime(String acronym, String singular, String name, String symbol) throws CurrenciesException {
 		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
@@ -85,13 +81,9 @@ public final class CurrenciesCore {
 		u.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(u);
 	}
-	
-	public static void addParent(String acronym, String child, int multiplier, String symbol, String name) throws CurrenciesException {
-		addParent(acronym, child, multiplier, symbol, name, name);
-	}
 
 	@Transactional
-	public static void addParent(String acronym, String child, int multiplier, String symbol, String name, String singular) throws CurrenciesException {
+	public static void addParent(String acronym, String singular, String name, String symbol, String child, int multiplier) throws CurrenciesException {
 		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
@@ -143,13 +135,9 @@ public final class CurrenciesCore {
 		u.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(u);
 	}
-	
-	public static void addChild(String acronym, String parent, int divisor, String symbol, String name) throws CurrenciesException {
-		addChild(acronym, parent, divisor, symbol, name, name);
-	}
 
 	@Transactional
-	public static void addChild(String acronym, String parent, int divisor, String symbol, String name, String singular) throws CurrenciesException {
+	public static void addChild(String acronym, String singular, String name, String symbol, String parent, int divisor) throws CurrenciesException {
 		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");

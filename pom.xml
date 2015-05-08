@@ -4,7 +4,7 @@
 
 	<groupId>com.nobleuplift.currencies</groupId>
 	<artifactId>Currencies</artifactId>
-	<version>0.0.1-b017</version>
+	<version>0.0.1-b018</version>
 	<packaging>jar</packaging>
 
 	<name>Currencies</name>
@@ -16,11 +16,11 @@
 		<plugin.website>https://nobleuplift.wordpress.com/</plugin.website>
 		<plugin.main>com.nobleuplift.currencies.Currencies</plugin.main>
 		
-		<currencies.create>/currencies create &lt;acronym&gt; &lt;name&gt; [prefix]]</currencies.create>
+		<currencies.create>/currencies create &lt;acronym&gt; &lt;name&gt; [prefix]</currencies.create>
 		<currencies.delete>/currencies delete &lt;acronym&gt;</currencies.delete>
-		<currencies.addprime>/currencies addprime &lt;acronym&gt; &lt;symbol&gt; &lt;name&gt; [singular]</currencies.addprime>
-		<currencies.addparent>/currencies addparent &lt;acronym&gt; &lt;child&gt; &lt;multiplier&gt; &lt;symbol&gt; &lt;name&gt; [singular]</currencies.addparent>
-		<currencies.addchild>/currencies addchild &lt;acronym&gt; &lt;parent&gt; &lt;divisor&gt; &lt;symbol&gt; &lt;name&gt; [singular]</currencies.addchild>
+		<currencies.addprime>/currencies addprime &lt;acronym&gt; &lt;name&gt; &lt;plural&gt; &lt;symbol&gt;</currencies.addprime>
+		<currencies.addparent>/currencies addparent &lt;acronym&gt; &lt;name&gt; &lt;plural&gt; &lt;symbol&gt; &lt;child&gt; &lt;multiplier&gt;</currencies.addparent>
+		<currencies.addchild>/currencies addchild &lt;acronym&gt; &lt;name&gt; &lt;plural&gt; &lt;symbol&gt; &lt;parent&gt; &lt;divisor&gt;</currencies.addchild>
 		<currencies.balance>/currencies balance [player] [currency]</currencies.balance>
 		<currencies.pay>/currencies pay &lt;player&gt; &lt;currency&gt; &lt;amount&gt;</currencies.pay>
 		<currencies.bill>/currencies bill &lt;player&gt; &lt;currency&gt; &lt;amount&gt;</currencies.bill>
@@ -112,8 +112,8 @@
 	<build>
 		<resources>
 			<resource>
-				<directory>src/main/java</directory>
-				<filtering>false</filtering>
+				<directory>src/main/java/com/nobleuplift/currencies</directory>
+				<filtering>true</filtering>
 			</resource>
 			<resource>
 				<directory>src/main/resources</directory>
