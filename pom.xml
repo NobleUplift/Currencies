@@ -4,7 +4,7 @@
 
 	<groupId>com.nobleuplift.currencies</groupId>
 	<artifactId>Currencies</artifactId>
-	<version>0.0.1-b025</version>
+	<version>0.0.1-b026</version>
 	<packaging>jar</packaging>
 
 	<name>Currencies</name>
