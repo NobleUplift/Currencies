@@ -1,7 +1,9 @@
 package com.nobleuplift.currencies.entities;
 
 import java.io.Serializable;
+
 import javax.persistence.*;
+
 import java.sql.Timestamp;
 
 
@@ -17,8 +19,8 @@ public class Transaction implements Serializable {
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
-	@Column(unique=true, nullable=false)
-	private String id;
+	@Column(updatable=false, unique=true, nullable=false)
+	private Long id;
 
 	@Column(nullable=false)
 	private long amount;
@@ -50,11 +52,11 @@ public class Transaction implements Serializable {
 	public Transaction() {
 	}
 
-	public String getId() {
+	public Long getId() {
 		return this.id;
 	}
 
-	public void setId(String id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
 

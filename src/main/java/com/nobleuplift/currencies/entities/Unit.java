@@ -19,7 +19,7 @@ public class Unit implements Serializable {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(unique=true, nullable=false)
-	private int id;
+	private Integer id;
 
 	@Column(nullable=false, length=32)
 	private String alternate;
@@ -73,11 +73,11 @@ public class Unit implements Serializable {
 	public Unit() {
 	}
 
-	public int getId() {
+	public Integer getId() {
 		return this.id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 

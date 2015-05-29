@@ -13,23 +13,23 @@ public class HoldingPK implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Column(name="account_id", insertable=false, updatable=false, unique=true, nullable=false)
-	private int accountId;
+	private Integer accountId;
 
 	@Column(name="unit_id", insertable=false, updatable=false, unique=true, nullable=false)
-	private int unitId;
+	private Integer unitId;
 
 	public HoldingPK() {
 	}
-	public int getAccountId() {
+	public Integer getAccountId() {
 		return this.accountId;
 	}
-	public void setAccountId(int accountId) {
+	public void setAccountId(Integer accountId) {
 		this.accountId = accountId;
 	}
-	public int getUnitId() {
+	public Integer getUnitId() {
 		return this.unitId;
 	}
-	public void setUnitId(int unitId) {
+	public void setUnitId(Integer unitId) {
 		this.unitId = unitId;
 	}
 

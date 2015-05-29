@@ -19,7 +19,7 @@ public class Currency implements Serializable {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(updatable=false, unique=true, nullable=false)
-	private short id;
+	private Short id;
 
 	@Column(nullable=false, length=3)
 	private String acronym;
@@ -53,11 +53,11 @@ public class Currency implements Serializable {
 	public Currency() {
 	}
 
-	public short getId() {
+	public Short getId() {
 		return this.id;
 	}
 
-	public void setId(short id) {
+	public void setId(Short id) {
 		this.id = id;
 	}
 

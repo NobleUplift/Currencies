@@ -19,7 +19,7 @@ public class Account implements Serializable {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(updatable=false, unique=true, nullable=false)
-	private int id;
+	private Integer id;
 
 	@Column(name="date_created", nullable=false)
 	private Timestamp dateCreated;
@@ -70,11 +70,11 @@ public class Account implements Serializable {
 	public Account() {
 	}
 
-	public int getId() {
+	public Integer getId() {
 		return this.id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 
