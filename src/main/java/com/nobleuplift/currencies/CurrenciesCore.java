@@ -60,7 +60,7 @@ public final class CurrenciesCore {
 	}
 
 	@Transactional
-	public static void addPrime(String acronym, String singular, String name, String symbol) throws CurrenciesException {
+	public static void addPrime(String acronym, String name, String plural, String symbol) throws CurrenciesException {
 		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
@@ -88,7 +88,7 @@ public final class CurrenciesCore {
 		u.setCurrency(c);
 		u.setChildUnit(null);
 		u.setName(name);
-		u.setAlternate(singular);
+		u.setAlternate(plural);
 		u.setSymbol(symbol);
 		u.setPrime(true);
 		u.setMain(true);
@@ -100,7 +100,7 @@ public final class CurrenciesCore {
 	}
 
 	@Transactional
-	public static void addParent(String acronym, String singular, String name, String symbol, String child, int multiplier) throws CurrenciesException {
+	public static void addParent(String acronym, String name, String plural, String symbol, String child, int multiplier) throws CurrenciesException {
 		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
@@ -156,7 +156,7 @@ public final class CurrenciesCore {
 		u.setCurrency(c);
 		u.setChildUnit(childUnit);
 		u.setName(name);
-		u.setAlternate(singular);
+		u.setAlternate(plural);
 		u.setSymbol(symbol);
 		u.setPrime(false);
 		//u.setBase(false);
@@ -223,8 +223,8 @@ public final class CurrenciesCore {
 		Unit childUnit = new Unit();
 		childUnit.setCurrency(c);
 		childUnit.setChildUnit(null);
-		childUnit.setName(plural);
-		childUnit.setAlternate(name);
+		childUnit.setName(name);
+		childUnit.setAlternate(plural);
 		childUnit.setSymbol(symbol);
 		childUnit.setPrime(false);
 		childUnit.setMain(true);
@@ -240,8 +240,8 @@ public final class CurrenciesCore {
 		Currencies.getInstance().getDatabase().save(parentUnit);
 	}
 	
-	public static void balance(String player) throws CurrenciesException {
-		balance(player, null);
+	public static Map<Currency, Long> balance(String player) throws CurrenciesException {
+		return balance(player, null);
 	}
 	
 	@Transactional

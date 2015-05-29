@@ -22,6 +22,7 @@
 		<currencies.addparent>/currencies addparent &lt;acronym&gt; &lt;name&gt; &lt;plural&gt; &lt;symbol&gt; &lt;child&gt; &lt;multiplier&gt;</currencies.addparent>
 		<currencies.addchild>/currencies addchild &lt;acronym&gt; &lt;name&gt; &lt;plural&gt; &lt;symbol&gt; &lt;parent&gt; &lt;divisor&gt;</currencies.addchild>
 		<currencies.openaccount>/currencies openaccount &lt;name&gt;</currencies.openaccount>
+		<currencies.setdefault>/currencies setdefault &lt;acronym&gt;</currencies.setdefault>
 		<currencies.balance>/currencies balance [player] [acronym]</currencies.balance>
 		<currencies.pay>/currencies pay &lt;player&gt; &lt;acronym&gt; &lt;amount&gt;</currencies.pay>
 		<currencies.bill>/currencies bill &lt;player&gt; &lt;acronym&gt; &lt;amount&gt;</currencies.bill>

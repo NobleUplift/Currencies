@@ -1,6 +1,10 @@
 package com.nobleuplift.currencies;
 
+import java.util.Map;
+
 import org.bukkit.command.CommandSender;
+
+import com.nobleuplift.currencies.entities.Currency;
 
 /**
  * Created on 2015 May 2nd at 04:10:01 PM.
@@ -42,6 +46,7 @@ public final class CurrenciesCommand {
 				if (args.length == 3) {
 					try {
 						CurrenciesCore.createCurrency(args[1], args[2]);
+						sender.sendMessage("Currency " + args[2] + " created.");
 					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}
@@ -61,6 +66,7 @@ public final class CurrenciesCommand {
 				if (args.length == 2) {
 					try {
 						CurrenciesCore.deleteCurrency(args[1]);
+						sender.sendMessage("Currency " + args[1] + " deleted.");
 					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}
@@ -73,6 +79,7 @@ public final class CurrenciesCommand {
 				if (args.length == 5) {
 					try {
 						CurrenciesCore.addPrime(args[1], args[2], args[3], args[4]);
+						sender.sendMessage("Unit " + args[2] + " created.");
 					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}
@@ -85,6 +92,7 @@ public final class CurrenciesCommand {
 				if (args.length == 7) {
 					try {
 						CurrenciesCore.addParent(args[1], args[2], args[3], args[4], args[5], Integer.parseInt(args[6]));
+						sender.sendMessage("Unit " + args[2] + " created.");
 					} catch (NumberFormatException e) {
 						sender.sendMessage("Multiplier must be an integer.");
 					} catch (CurrenciesException e) {
@@ -99,6 +107,7 @@ public final class CurrenciesCommand {
 				if (args.length == 7) {
 					try {
 						CurrenciesCore.addChild(args[1], args[2], args[3], args[4], args[5], Integer.parseInt(args[6]));
+						sender.sendMessage("Unit " + args[2] + " created.");
 					} catch (NumberFormatException e) {
 						sender.sendMessage("Divisor must be an integer.");
 					} catch (CurrenciesException e) {
@@ -112,19 +121,28 @@ public final class CurrenciesCommand {
 			case "balance":
 				if (args.length == 1) {
 					try {
-						CurrenciesCore.balance(sender.getName());
+						Map<Currency, Long> currencies = CurrenciesCore.balance(sender.getName());
+						for (Map.Entry<Currency, Long> entry : currencies.entrySet()) {
+							sender.sendMessage(CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
+						}
 					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}
 				} else if (args.length == 2) {
 					try {
-						CurrenciesCore.balance(args[1]);
+						Map<Currency, Long> currencies = CurrenciesCore.balance(args[1]);
+						for (Map.Entry<Currency, Long> entry : currencies.entrySet()) {
+							sender.sendMessage(CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
+						}
 					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}
 				} else if (args.length == 3) {
 					try {
-						CurrenciesCore.balance(args[1], args[2]);
+						Map<Currency, Long> currencies = CurrenciesCore.balance(args[1], args[2]);
+						for (Map.Entry<Currency, Long> entry : currencies.entrySet()) {
+							sender.sendMessage(CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
+						}
 					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}
