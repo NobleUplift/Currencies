@@ -42,6 +42,10 @@ public class Currency implements Serializable {
 	@Column(nullable=false)
 	private boolean prefix;
 
+	//bi-directional many-to-one association to Account
+	@OneToMany(mappedBy="defaultCurrency")
+	private List<Account> accountDefaults;
+
 	//bi-directional many-to-one association to Unit
 	@OneToMany(mappedBy="currency")
 	private List<Unit> units;
@@ -89,10 +93,6 @@ public class Currency implements Serializable {
 		this.dateModified = dateModified;
 	}
 
-	public boolean isDeleted() {
-		return this.deleted;
-	}
-
 	public boolean getDeleted() {
 		return this.deleted;
 	}
@@ -109,16 +109,34 @@ public class Currency implements Serializable {
 		this.name = name;
 	}
 
-	public boolean isPrefix() {
-		return this.prefix;
-	}
-
 	public boolean getPrefix() {
 		return this.prefix;
 	}
 
 	public void setPrefix(boolean prefix) {
 		this.prefix = prefix;
+	}
+
+	public List<Account> getAccountDefaults() {
+		return this.accountDefaults;
+	}
+
+	public void setAccountDefaults(List<Account> accountDefaults) {
+		this.accountDefaults = accountDefaults;
+	}
+
+	public Account addAccountDefault(Account accountDefault) {
+		getAccountDefaults().add(accountDefault);
+		accountDefault.setDefaultCurrency(this);
+
+		return accountDefault;
+	}
+
+	public Account removeAccountDefault(Account accountDefault) {
+		getAccountDefaults().remove(accountDefault);
+		accountDefault.setDefaultCurrency(null);
+
+		return accountDefault;
 	}
 
 	public List<Unit> getUnits() {

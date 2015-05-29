@@ -19,7 +19,7 @@ public class Account implements Serializable {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(updatable=false, unique=true, nullable=false)
-	private Long id;
+	private int id;
 
 	@Column(name="date_created", nullable=false)
 	private Timestamp dateCreated;
@@ -27,7 +27,7 @@ public class Account implements Serializable {
 	@Column(name="date_modified", nullable=false)
 	private Timestamp dateModified;
 
-	@Column(nullable=false, length=45)
+	@Column(nullable=false, length=64)
 	private String name;
 
 	@Column(length=32)
@@ -38,17 +38,22 @@ public class Account implements Serializable {
 	@JoinTable(
 		name="currencies_holder"
 		, joinColumns={
-			@JoinColumn(name="holdee_id", nullable=false)
+			@JoinColumn(name="child_account_id", nullable=false)
 			}
 		, inverseJoinColumns={
-			@JoinColumn(name="holder_id", nullable=false)
+			@JoinColumn(name="parent_account_id", nullable=false)
 			}
 		)
-	private List<Account> holder;
+	private List<Account> parentAccounts;
 
 	//bi-directional many-to-many association to Account
-	@ManyToMany(mappedBy="holder")
-	private List<Account> holdee;
+	@ManyToMany(mappedBy="parentAccounts")
+	private List<Account> childAccounts;
+
+	//bi-directional many-to-one association to Currency
+	@ManyToOne
+	@JoinColumn(name="default_currency_id")
+	private Currency defaultCurrency;
 
 	//bi-directional many-to-one association to Holding
 	@OneToMany(mappedBy="account")
@@ -65,11 +70,11 @@ public class Account implements Serializable {
 	public Account() {
 	}
 
-	public Long getId() {
+	public int getId() {
 		return this.id;
 	}
 
-	public void setId(Long id) {
+	public void setId(int id) {
 		this.id = id;
 	}
 
@@ -105,20 +110,28 @@ public class Account implements Serializable {
 		this.uuid = uuid;
 	}
 
-	public List<Account> getHolder() {
-		return this.holder;
+	public List<Account> getParentAccounts() {
+		return this.parentAccounts;
 	}
 
-	public void setHolder(List<Account> holder) {
-		this.holder = holder;
+	public void setParentAccounts(List<Account> parentAccounts) {
+		this.parentAccounts = parentAccounts;
 	}
 
-	public List<Account> getHoldee() {
-		return this.holdee;
+	public List<Account> getChildAccounts() {
+		return this.childAccounts;
 	}
 
-	public void setHoldee(List<Account> holdee) {
-		this.holdee = holdee;
+	public void setChildAccounts(List<Account> childAccounts) {
+		this.childAccounts = childAccounts;
+	}
+
+	public Currency getDefaultCurrency() {
+		return this.defaultCurrency;
+	}
+
+	public void setDefaultCurrency(Currency defaultCurrency) {
+		this.defaultCurrency = defaultCurrency;
 	}
 
 	public List<Holding> getHoldings() {

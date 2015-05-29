@@ -21,6 +21,9 @@ public class Unit implements Serializable {
 	@Column(unique=true, nullable=false)
 	private int id;
 
+	@Column(nullable=false, length=32)
+	private String alternate;
+
 	@Column(name="base_multiples", nullable=false)
 	private int baseMultiples;
 
@@ -33,14 +36,14 @@ public class Unit implements Serializable {
 	@Column(name="date_modified", nullable=false)
 	private Timestamp dateModified;
 
+	@Column(nullable=false)
+	private boolean main;
+
 	@Column(nullable=false, length=32)
 	private String name;
 
 	@Column(nullable=false)
 	private boolean prime;
-
-	@Column(nullable=false, length=32)
-	private String singular;
 
 	@Column(nullable=false, length=2)
 	private String symbol;
@@ -78,6 +81,14 @@ public class Unit implements Serializable {
 		this.id = id;
 	}
 
+	public String getAlternate() {
+		return this.alternate;
+	}
+
+	public void setAlternate(String alternate) {
+		this.alternate = alternate;
+	}
+
 	public int getBaseMultiples() {
 		return this.baseMultiples;
 	}
@@ -110,6 +121,14 @@ public class Unit implements Serializable {
 		this.dateModified = dateModified;
 	}
 
+	public boolean getMain() {
+		return this.main;
+	}
+
+	public void setMain(boolean main) {
+		this.main = main;
+	}
+
 	public String getName() {
 		return this.name;
 	}
@@ -118,24 +137,12 @@ public class Unit implements Serializable {
 		this.name = name;
 	}
 
-	public boolean isPrime() {
-		return this.prime;
-	}
-
 	public boolean getPrime() {
 		return this.prime;
 	}
 
 	public void setPrime(boolean prime) {
 		this.prime = prime;
-	}
-
-	public String getSingular() {
-		return this.singular;
-	}
-
-	public void setSingular(String singular) {
-		this.singular = singular;
 	}
 
 	public String getSymbol() {

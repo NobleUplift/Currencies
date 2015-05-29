@@ -1,11 +1,15 @@
 package com.nobleuplift.currencies;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.nobleuplift.currencies.entities.Account;
@@ -13,7 +17,6 @@ import com.nobleuplift.currencies.entities.Currency;
 import com.nobleuplift.currencies.entities.Holding;
 import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
-import com.nobleuplift.currencies.entities.TransactionPK;
 import com.nobleuplift.currencies.entities.Unit;
 
 public class Currencies extends JavaPlugin {
@@ -30,7 +33,6 @@ public class Currencies extends JavaPlugin {
         list.add(Currency.class);
         list.add(HoldingPK.class);
         list.add(Holding.class);
-        list.add(TransactionPK.class);
         list.add(Transaction.class);
         list.add(Unit.class);
         return list;
@@ -65,6 +67,26 @@ public class Currencies extends JavaPlugin {
 			return true;
 		} else {
 			return false;
+		}
+	}
+	
+	@EventHandler
+	public void onPlayerJoin(PlayerJoinEvent event) {
+		Player p = event.getPlayer();
+		
+		getLogger().info("Creating player account for " + p.getName() + " (" + p.getUniqueId().toString() + ").");
+		Account pa = Currencies.getInstance().getDatabase().find(Account.class).where().eq("uuid", p.getUniqueId().toString()).findUnique();
+		if (pa == null) {
+			pa = new Account();
+			pa.setName(p.getName());
+			pa.setUuid(p.getUniqueId().toString());
+			pa.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+			pa.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+			Currencies.getInstance().getDatabase().save(pa);
+		} else if (!p.getName().equals(pa.getName())) {
+			pa.setName(p.getName());
+			pa.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+			Currencies.getInstance().getDatabase().save(pa);
 		}
 	}
 }

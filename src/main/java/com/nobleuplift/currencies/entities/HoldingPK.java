@@ -13,17 +13,17 @@ public class HoldingPK implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Column(name="account_id", insertable=false, updatable=false, unique=true, nullable=false)
-	private String accountId;
+	private int accountId;
 
 	@Column(name="unit_id", insertable=false, updatable=false, unique=true, nullable=false)
 	private int unitId;
 
 	public HoldingPK() {
 	}
-	public String getAccountId() {
+	public int getAccountId() {
 		return this.accountId;
 	}
-	public void setAccountId(String accountId) {
+	public void setAccountId(int accountId) {
 		this.accountId = accountId;
 	}
 	public int getUnitId() {
@@ -42,14 +42,14 @@ public class HoldingPK implements Serializable {
 		}
 		HoldingPK castOther = (HoldingPK)other;
 		return 
-			this.accountId.equals(castOther.accountId)
+			(this.accountId == castOther.accountId)
 			&& (this.unitId == castOther.unitId);
 	}
 
 	public int hashCode() {
 		final int prime = 31;
 		int hash = 17;
-		hash = hash * prime + this.accountId.hashCode();
+		hash = hash * prime + this.accountId;
 		hash = hash * prime + this.unitId;
 		
 		return hash;

@@ -112,7 +112,7 @@ public final class CurrenciesCommand {
 			case "balance":
 				if (args.length == 1) {
 					try {
-						CurrenciesCore.balance();
+						CurrenciesCore.balance(sender.getName());
 					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}
@@ -136,7 +136,7 @@ public final class CurrenciesCommand {
 			case "pay":
 				if (args.length == 4) {
 					try {
-						CurrenciesCore.pay(args[1], args[2], args[3]);
+						CurrenciesCore.pay(sender.getName(), args[1], args[2], args[3]);
 					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}
@@ -148,7 +148,7 @@ public final class CurrenciesCommand {
 			case "bill":
 				if (args.length == 4) {
 					try {
-						CurrenciesCore.bill(args[1], args[2], args[3]);
+						CurrenciesCore.bill(sender.getName(), args[1], args[2], args[3]);
 					} catch (CurrenciesException e) {
 						sender.sendMessage(e.getMessage());
 					}

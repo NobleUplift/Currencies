@@ -15,8 +15,10 @@ import java.sql.Timestamp;
 public class Transaction implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-	@EmbeddedId
-	private TransactionPK id;
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(unique=true, nullable=false)
+	private String id;
 
 	@Column(nullable=false)
 	private long amount;
@@ -32,27 +34,27 @@ public class Transaction implements Serializable {
 
 	//bi-directional many-to-one association to Account
 	@ManyToOne
-	@JoinColumn(name="sender_id", nullable=false, insertable=false, updatable=false)
+	@JoinColumn(name="sender_id", nullable=false)
 	private Account sender;
 
 	//bi-directional many-to-one association to Account
 	@ManyToOne
-	@JoinColumn(name="recipient_id", nullable=false, insertable=false, updatable=false)
+	@JoinColumn(name="recipient_id", nullable=false)
 	private Account recipient;
 
 	//bi-directional many-to-one association to Unit
 	@ManyToOne
-	@JoinColumn(name="unit_id", nullable=false, insertable=false, updatable=false)
+	@JoinColumn(name="unit_id", nullable=false)
 	private Unit unit;
 
 	public Transaction() {
 	}
 
-	public TransactionPK getId() {
+	public String getId() {
 		return this.id;
 	}
 
-	public void setId(TransactionPK id) {
+	public void setId(String id) {
 		this.id = id;
 	}
 
@@ -78,10 +80,6 @@ public class Transaction implements Serializable {
 
 	public void setDatePaid(Timestamp datePaid) {
 		this.datePaid = datePaid;
-	}
-
-	public boolean isPaid() {
-		return this.paid;
 	}
 
 	public boolean getPaid() {

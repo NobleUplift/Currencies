@@ -18,6 +18,7 @@ commands:
             ${currencies.addprime}
             ${currencies.addparent}
             ${currencies.addchild}
+            ${currencies.openaccount}
             ${currencies.balance}
             ${currencies.pay}
             ${currencies.bill}
