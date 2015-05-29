@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.avaje.ebean.EbeanServer;
 import com.avaje.ebean.annotation.Transactional;
 import com.nobleuplift.currencies.entities.Account;
 import com.nobleuplift.currencies.entities.Currency;
@@ -20,18 +19,6 @@ import com.nobleuplift.currencies.entities.Unit;
  * @author NobleUplift
  */
 public final class CurrenciesCore {
-	public static EbeanServer getDatabase() throws CurrenciesException {
-		Currencies currencies = Currencies.getInstance();
-		if (currencies == null) {
-			throw new CurrenciesException("Plugin instance is null!");
-		}
-		EbeanServer es = currencies.getDatabase();
-		if (es == null) {
-			throw new CurrenciesException("Plugin database has not been initialized!");
-		}
-		return es;
-	}
-	
 	public static void createCurrency(String acronym, String name) throws CurrenciesException {
 		createCurrency(acronym, name, true);
 	}
@@ -41,11 +28,11 @@ public final class CurrenciesCore {
 		if (acronym.length() != 3) {
 			throw new CurrenciesException("All currency acronyms must be three characters.");
 		}
-		Currency c = getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
+		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c != null) {
 			throw new CurrenciesException(acronym + " has been taken by another currency.");
 		}
-		c = getDatabase().find(Currency.class).where().eq("name", name).findUnique();
+		c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("name", name).findUnique();
 		if (c != null) {
 			throw new CurrenciesException(name + " has been taken by another currency.");
 		}
@@ -58,33 +45,33 @@ public final class CurrenciesCore {
 		c.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		c.setDateDeleted(null);
 		c.setDeleted(false);
-		getDatabase().save(c);
+		Currencies.getInstance().getDatabase().save(c);
 	}
 	
 	public static void deleteCurrency(String acronym) throws CurrenciesException {
-		Currency c = getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
+		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Could not find currency with acronym " + acronym + ".");
 		}
 		
 		c.setDeleted(true);
 		c.setDateDeleted(new Timestamp(Calendar.getInstance().getTimeInMillis()));
-		getDatabase().save(c);
+		Currencies.getInstance().getDatabase().save(c);
 	}
 
 	@Transactional
 	public static void addPrime(String acronym, String singular, String name, String symbol) throws CurrenciesException {
-		Currency c = getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
+		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
-		Unit symbolUnit = getDatabase().find(Unit.class).where().eq("symbol", symbol).findUnique();
+		Unit symbolUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("symbol", symbol).findUnique();
 		if (symbolUnit != null) {
 			throw new CurrenciesException(symbol + " is already the prime unit of another currency.");
 		}
 		
-		Unit u = getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
+		Unit u = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
 		if (u != null) {
 			throw new CurrenciesException("Currency " + acronym + " already has a prime unit of currency.");
 		}
@@ -109,22 +96,22 @@ public final class CurrenciesCore {
 		u.setBaseMultiples(0);
 		u.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		u.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
-		getDatabase().save(u);
+		Currencies.getInstance().getDatabase().save(u);
 	}
 
 	@Transactional
 	public static void addParent(String acronym, String singular, String name, String symbol, String child, int multiplier) throws CurrenciesException {
-		Currency c = getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
+		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
-		Unit prime = getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
+		Unit prime = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
 		if (prime == null) {
 			throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
 		}
 		
-		Unit childUnit = getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("name", child).findUnique();
+		Unit childUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("name", child).findUnique();
 		if (childUnit == null) {
 			throw new CurrenciesException("Child unit " + child + " does not exist for currency " + acronym + ".");
 		}
@@ -137,7 +124,7 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Symbol cannot contain numbers.");
 		}
 		
-		//List<Unit> otherPrimes = getDatabase().find(Unit.class).where()
+		//List<Unit> otherPrimes = Currencies.getInstance().getDatabase().find(Unit.class).where()
 		//	.eq("symbol", symbol).eq("prime", true).findList();
 		//if (!otherPrimes.isEmpty()) {
 		//	throw new CurrenciesException(symbol + " is a prime unit for another currency.");
@@ -147,14 +134,14 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Multiplier must be greater than one.");
 		}
 		
-		Unit u = getDatabase().find(Unit.class).where()
+		Unit u = Currencies.getInstance().getDatabase().find(Unit.class).where()
 			.eq("currency_id", c.getId())
 			.eq("symbol", symbol)
 			.eq("name", name)
 			.findUnique();
 		
 		// TODO: Find out how to validate this later
-		/*Unit singularUnit = getDatabase().find(Unit.class).where()
+		/*Unit singularUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
 			.eq("currency_id", c.getId())
 			.eq("singular", singular)
 			.findUnique();*/
@@ -177,22 +164,22 @@ public final class CurrenciesCore {
 		u.setBaseMultiples(multiples);
 		u.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		u.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
-		getDatabase().save(u);
+		Currencies.getInstance().getDatabase().save(u);
 	}
 
 	@Transactional
 	public static void addChild(String acronym, String name, String plural, String symbol, String parent, int divisor) throws CurrenciesException {
-		Currency c = getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
+		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
-		Unit prime = getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
+		Unit prime = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
 		if (prime == null) {
 			throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
 		}
 		
-		Unit parentUnit = getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("name", parent).findUnique();
+		Unit parentUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("name", parent).findUnique();
 		if (parentUnit == null) {
 			throw new CurrenciesException("Unit " + parent + " does not exist.");
 		}
@@ -209,7 +196,7 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Symbol cannot contain numbers.");
 		}
 		
-		//List<Unit> otherPrimes = getDatabase().find(Unit.class).where()
+		//List<Unit> otherPrimes = Currencies.getInstance().getDatabase().find(Unit.class).where()
 		//	.eq("symbol", symbol).eq("prime", true).findList();
 		//if (!otherPrimes.isEmpty()) {
 		//	throw new CurrenciesException(symbol + " is a prime unit for another currency.");
@@ -230,7 +217,7 @@ public final class CurrenciesCore {
 			} else {
 				u.setBaseMultiples(u.getBaseMultiples() * divisor);
 			}
-			getDatabase().save(u);
+			Currencies.getInstance().getDatabase().save(u);
 		}
 		
 		Unit childUnit = new Unit();
@@ -245,12 +232,12 @@ public final class CurrenciesCore {
 		childUnit.setBaseMultiples(0);
 		childUnit.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		childUnit.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
-		getDatabase().save(childUnit);
+		Currencies.getInstance().getDatabase().save(childUnit);
 		
 		parentUnit.setChildUnit(childUnit);
 		parentUnit.setChildMultiples(divisor);
 		parentUnit.setBaseMultiples(divisor);
-		getDatabase().save(parentUnit);
+		Currencies.getInstance().getDatabase().save(parentUnit);
 	}
 	
 	public static void balance(String player) throws CurrenciesException {
@@ -259,7 +246,7 @@ public final class CurrenciesCore {
 	
 	@Transactional
 	public static Map<Currency, Long> balance(String player, String currency) throws CurrenciesException {
-		Account account = getDatabase().find(Account.class).where().eq("name", player).findUnique();
+		Account account = Currencies.getInstance().getDatabase().find(Account.class).where().eq("name", player).findUnique();
 		if (account == null) {
 			throw new CurrenciesException("Account " + player + " does not exist.");
 		}
@@ -269,12 +256,12 @@ public final class CurrenciesCore {
 			
 			return summateHoldings(holdings);
 		} else {
-			Currency c = getDatabase().find(Currency.class).where().eq("acronym", currency).findUnique();
+			Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", currency).findUnique();
 			if (c == null) {
 				throw new CurrenciesException("Currency with acronym " + currency + " does not exist.");
 			}
 			
-			List<Holding> holdings = getDatabase().find(Holding.class)
+			List<Holding> holdings = Currencies.getInstance().getDatabase().find(Holding.class)
 				.where().eq("unit.currency", c).findList();
 			
 			return summateHoldings(holdings);
@@ -283,15 +270,15 @@ public final class CurrenciesCore {
 	
 	@Transactional
 	public static void pay(String from, String to, String currency, String amount) throws CurrenciesException {
-		Account fromAccount = getAccountFromPlayer(from);
-		Account toAccount = getAccountFromPlayer(to);
+		//Account fromAccount = getAccountFromPlayer(from);
+		//Account toAccount = getAccountFromPlayer(to);
 		
 	}
 	
 	@Transactional
 	public static void bill(String from, String to, String currency, String amount) throws CurrenciesException {
-		Account fromAccount = getAccountFromPlayer(from);
-		Account toAccount = getAccountFromPlayer(to);
+		//Account fromAccount = getAccountFromPlayer(from);
+		//Account toAccount = getAccountFromPlayer(to);
 		
 	}
 	
@@ -310,8 +297,11 @@ public final class CurrenciesCore {
 		Currency currency = getCurrencyFromAcronym(acronym);
 		long addAmount = parseCurrency(currency, amount);
 		
-		Holding holding = getDatabase().find(Holding.class)
-			.where().eq("unit.currency", currency).eq("unit.prime", true).findUnique();
+		Holding holding = Currencies.getInstance().getDatabase().find(Holding.class)
+			.where()
+			.eq("account", account)
+			.eq("unit.currency", currency)
+			.eq("unit.prime", true).findUnique();
 		
 		holding.setAmount(holding.getAmount() + addAmount);
 		
@@ -324,10 +314,15 @@ public final class CurrenciesCore {
 		Currency currency = getCurrencyFromAcronym(acronym);
 		long removeAmount = parseCurrency(currency, amount);
 		
-		Holding holding = getDatabase().find(Holding.class)
-			.where().eq("unit.currency", currency).eq("unit.prime", true).findUnique();
+		Holding holding = Currencies.getInstance().getDatabase().find(Holding.class)
+			.where()
+			.eq("account", account)
+			.eq("unit.currency", currency)
+			.eq("unit.prime", true).findUnique();
 		
 		holding.setAmount(holding.getAmount() - removeAmount);
+		
+		// TODO: Don't forget to log a transaction
 	}
 	
 	public static void bankrupt(String player) throws CurrenciesException {
@@ -340,29 +335,29 @@ public final class CurrenciesCore {
 	
 	@Transactional
 	public static void bankrupt(String player, String acronym, String amount) throws CurrenciesException {
-		Account account = getDatabase().find(Account.class)
+		Account account = Currencies.getInstance().getDatabase().find(Account.class)
 			.where().eq("name", player).findUnique();
 		
 		if (amount == null) {
 			// Reset a player's currency to this amount
-			getDatabase().delete(
-				getDatabase().find(Holding.class)
+			Currencies.getInstance().getDatabase().delete(
+				Currencies.getInstance().getDatabase().find(Holding.class)
 				.where().eq("account", account).findList()
 			);
 			
 			// TODO: Write the rest
 		} else if (acronym == null) {
 			// Delete all of a player's holdings equal to this currency
-			getDatabase().delete(
-					getDatabase().find(Holding.class)
+			Currencies.getInstance().getDatabase().delete(
+					Currencies.getInstance().getDatabase().find(Holding.class)
 					.where().eq("account", account).findList()
 				);
 			
 			// TODO: Write the rest
 		} else {
 			// Delete everything
-			getDatabase().delete(
-				getDatabase().find(Holding.class)
+			Currencies.getInstance().getDatabase().delete(
+				Currencies.getInstance().getDatabase().find(Holding.class)
 				.where().eq("account", account).findList()
 			);
 		}
@@ -390,7 +385,7 @@ public final class CurrenciesCore {
 		return currencyBaseAmount;
 	}
 	
-	protected static void compactHoldings(Account account ) throws CurrenciesException {
+	protected static void compactHoldings(Account account ) {
 		List<Holding> holdings = account.getHoldings();
 		Map<Currency, Long> swapMap = new HashMap<>();
 		
@@ -408,7 +403,7 @@ public final class CurrenciesCore {
 				}
 				tempAmount += holding.getAmount();
 				swapMap.put(c, tempAmount);
-				getDatabase().delete(holding);
+				Currencies.getInstance().getDatabase().delete(holding);
 				ih.remove();
 			}
 		}
@@ -426,7 +421,7 @@ public final class CurrenciesCore {
 		// TODO: This method is horrible, code the simple cases first
 	}
 	
-	public static Map<Currency, String> formatCurrencies(Map<Currency, Long> currencyAmounts) throws CurrenciesException {
+	public static Map<Currency, String> formatCurrencies(Map<Currency, Long> currencyAmounts) {
 		Map<Currency, String> retval = new HashMap<>();
 		for (Map.Entry<Currency, Long> currencyAmount : currencyAmounts.entrySet()) {
 			Currency c = currencyAmount.getKey();
@@ -436,8 +431,8 @@ public final class CurrenciesCore {
 		return retval;
 	}
 	
-	public static String formatCurrency(Currency c, long amount) throws CurrenciesException {
-		List<Unit> units = getDatabase().find(Unit.class).where()
+	public static String formatCurrency(Currency c, long amount) {
+		List<Unit> units = Currencies.getInstance().getDatabase().find(Unit.class).where()
 			.eq("currency", c).eq("main", true).orderBy().desc("base_multiples").findList();
 		
 		String currency = "";
@@ -467,13 +462,13 @@ public final class CurrenciesCore {
 		return currency;
 	}
 	
-	public static Account getAccountFromPlayer(String player) throws CurrenciesException {
-		return getDatabase().find(Account.class)
+	public static Account getAccountFromPlayer(String player) {
+		return Currencies.getInstance().getDatabase().find(Account.class)
 			.where().eq("name", player).findUnique();
 	}
 	
-	public static Currency getCurrencyFromAcronym(String acronym) throws CurrenciesException {
-		return getDatabase().find(Currency.class)
+	public static Currency getCurrencyFromAcronym(String acronym) {
+		return Currencies.getInstance().getDatabase().find(Currency.class)
 			.where().eq("acronym", acronym).findUnique();
 	}
 	
@@ -487,7 +482,7 @@ public final class CurrenciesCore {
 		Currency c = null;
 		
 		for (String part : parts) {
-			List<Unit> primes = getDatabase().find(Unit.class)
+			List<Unit> primes = Currencies.getInstance().getDatabase().find(Unit.class)
 				.where().eq("symbol", part).eq("prime", true).findList();
 			
 			if (primes.size() == 1) {
@@ -532,7 +527,7 @@ public final class CurrenciesCore {
 		/*Currency c = null;
 		
 		for (String part : parts) {
-			List<Unit> primes = getDatabase().find(Unit.class)
+			List<Unit> primes = Currencies.getInstance().getDatabase().find(Unit.class)
 				.where().eq("symbol", part).eq("prime", true).findList();
 			
 			if (primes.size() == 1) {
@@ -561,7 +556,7 @@ public final class CurrenciesCore {
 		
 		for (String part : parts) {
 			if (part.matches("\\D+")) {
-				partUnit = getDatabase().find(Unit.class)
+				partUnit = Currencies.getInstance().getDatabase().find(Unit.class)
 					.where().eq("currency_id", currency.getId()).eq("symbol", part).findUnique();
 				if (partUnit == null) {
 					throw new CurrenciesException(part + " is not a valid symbol.");

@@ -30,7 +30,7 @@ public class Account implements Serializable {
 	@Column(nullable=false, length=64)
 	private String name;
 
-	@Column(length=32)
+	@Column(length=37)
 	private String uuid;
 
 	//bi-directional many-to-many association to Account
