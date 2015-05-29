@@ -12,8 +12,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.server.PluginDisableEvent;
-import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.nobleuplift.currencies.entities.Account;
@@ -42,8 +40,8 @@ public class Currencies extends JavaPlugin implements Listener {
         return list;
     }
 	
-	@EventHandler
-	public void onEnable(PluginEnableEvent e) {
+    @Override
+	public void onEnable() {
 		instance = this;
 		
 		getConfig().options().copyDefaults(false);
@@ -54,9 +52,8 @@ public class Currencies extends JavaPlugin implements Listener {
 		System.out.print("[Currencies] Enabled.");
 	}
 	
-
-	@EventHandler
-	public void onDisable(PluginDisableEvent e) {
+    @Override
+	public void onDisable() {
 		System.out.print("[Currencies] Disabled.");
 	}
 	
