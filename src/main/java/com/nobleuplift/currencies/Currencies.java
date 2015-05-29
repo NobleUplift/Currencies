@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,7 +21,7 @@ import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
 import com.nobleuplift.currencies.entities.Unit;
 
-public class Currencies extends JavaPlugin {
+public class Currencies extends JavaPlugin implements Listener {
 	protected static Currencies instance;
 	
 	protected static Currencies getInstance() {
@@ -44,6 +46,8 @@ public class Currencies extends JavaPlugin {
 		
 		getConfig().options().copyDefaults(false);
 		saveConfig();
+		
+		Bukkit.getPluginManager().registerEvents(this, this);
 		
 		System.out.print("[Currencies] Enabled.");
 	}
