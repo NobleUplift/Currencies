@@ -25,19 +25,19 @@ public final class CurrenciesCommand {
 	public static final String CURRENCIES_DEBIT = "${currencies.debit}";
 	public static final String CURRENCIES_BANKRUPT = "${currencies.bankrupt}";
 	
-	protected static void help(CommandSender player) {
-		player.sendMessage(CURRENCIES_CREATE);
-		player.sendMessage(CURRENCIES_DELETE);
-		player.sendMessage(CURRENCIES_ADDPRIME);
-		player.sendMessage(CURRENCIES_ADDPARENT);
-		player.sendMessage(CURRENCIES_ADDCHILD);
-		player.sendMessage(CURRENCIES_BALANCE);
-		player.sendMessage(CURRENCIES_PAY);
-		player.sendMessage(CURRENCIES_BILL);
-		player.sendMessage(CURRENCIES_PAYBILL);
-		player.sendMessage(CURRENCIES_CREDIT);
-		player.sendMessage(CURRENCIES_DEBIT);
-		player.sendMessage(CURRENCIES_BANKRUPT);
+	protected static void help(CommandSender sender) {
+		Currencies.tell(sender, CURRENCIES_CREATE);
+		Currencies.tell(sender, CURRENCIES_DELETE);
+		Currencies.tell(sender, CURRENCIES_ADDPRIME);
+		Currencies.tell(sender, CURRENCIES_ADDPARENT);
+		Currencies.tell(sender, CURRENCIES_ADDCHILD);
+		Currencies.tell(sender, CURRENCIES_BALANCE);
+		Currencies.tell(sender, CURRENCIES_PAY);
+		Currencies.tell(sender, CURRENCIES_BILL);
+		Currencies.tell(sender, CURRENCIES_PAYBILL);
+		Currencies.tell(sender, CURRENCIES_CREDIT);
+		Currencies.tell(sender, CURRENCIES_DEBIT);
+		Currencies.tell(sender, CURRENCIES_BANKRUPT);
 	}
 	
 	protected static void subcommands(CommandSender sender, String[] args) {
@@ -46,19 +46,19 @@ public final class CurrenciesCommand {
 				if (args.length == 3) {
 					try {
 						CurrenciesCore.createCurrency(args[1], args[2]);
-						sender.sendMessage("Currency " + args[2] + " created.");
+						Currencies.tell(sender, "Currency " + args[2] + " created.");
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 4) {
 					boolean prefix = ("false".equals(args[3]) ? false : true);
 					try {
 						CurrenciesCore.createCurrency(args[1], args[2], prefix);
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_CREATE);
+					Currencies.tell(sender, CURRENCIES_CREATE);
 				}
 				break;
 			
@@ -66,12 +66,12 @@ public final class CurrenciesCommand {
 				if (args.length == 2) {
 					try {
 						CurrenciesCore.deleteCurrency(args[1]);
-						sender.sendMessage("Currency " + args[1] + " deleted.");
+						Currencies.tell(sender, "Currency " + args[1] + " deleted.");
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_DELETE);
+					Currencies.tell(sender, CURRENCIES_DELETE);
 				}
 				break;
 			
@@ -79,12 +79,12 @@ public final class CurrenciesCommand {
 				if (args.length == 5) {
 					try {
 						CurrenciesCore.addPrime(args[1], args[2], args[3], args[4]);
-						sender.sendMessage("Unit " + args[2] + " created.");
+						Currencies.tell(sender, "Unit " + args[2] + " created.");
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_ADDPRIME);
+					Currencies.tell(sender, CURRENCIES_ADDPRIME);
 				}
 				break;
 			
@@ -92,14 +92,14 @@ public final class CurrenciesCommand {
 				if (args.length == 7) {
 					try {
 						CurrenciesCore.addParent(args[1], args[2], args[3], args[4], args[5], Integer.parseInt(args[6]));
-						sender.sendMessage("Unit " + args[2] + " created.");
+						Currencies.tell(sender, "Unit " + args[2] + " created.");
 					} catch (NumberFormatException e) {
-						sender.sendMessage("Multiplier must be an integer.");
+						Currencies.tell(sender, "Multiplier must be an integer.");
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_ADDPARENT);
+					Currencies.tell(sender, CURRENCIES_ADDPARENT);
 				}
 				break;
 			
@@ -107,14 +107,14 @@ public final class CurrenciesCommand {
 				if (args.length == 7) {
 					try {
 						CurrenciesCore.addChild(args[1], args[2], args[3], args[4], args[5], Integer.parseInt(args[6]));
-						sender.sendMessage("Unit " + args[2] + " created.");
+						Currencies.tell(sender, "Unit " + args[2] + " created.");
 					} catch (NumberFormatException e) {
-						sender.sendMessage("Divisor must be an integer.");
+						Currencies.tell(sender, "Divisor must be an integer.");
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_ADDCHILD);
+					Currencies.tell(sender, CURRENCIES_ADDCHILD);
 				}
 				break;
 			
@@ -123,31 +123,31 @@ public final class CurrenciesCommand {
 					try {
 						Map<Currency, Long> currencies = CurrenciesCore.balance(sender.getName());
 						for (Map.Entry<Currency, Long> entry : currencies.entrySet()) {
-							sender.sendMessage(CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
+							Currencies.tell(sender, CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
 						}
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 2) {
 					try {
 						Map<Currency, Long> currencies = CurrenciesCore.balance(args[1]);
 						for (Map.Entry<Currency, Long> entry : currencies.entrySet()) {
-							sender.sendMessage(CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
+							Currencies.tell(sender, CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
 						}
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 3) {
 					try {
 						Map<Currency, Long> currencies = CurrenciesCore.balance(args[1], args[2]);
 						for (Map.Entry<Currency, Long> entry : currencies.entrySet()) {
-							sender.sendMessage(CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
+							Currencies.tell(sender, CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
 						}
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_BALANCE);
+					Currencies.tell(sender, CURRENCIES_BALANCE);
 				}
 				break;
 			
@@ -156,10 +156,10 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.pay(sender.getName(), args[1], args[2], args[3]);
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_PAY);
+					Currencies.tell(sender, CURRENCIES_PAY);
 				}
 				break;
 			
@@ -168,10 +168,10 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.bill(sender.getName(), args[1], args[2], args[3]);
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_BILL);
+					Currencies.tell(sender, CURRENCIES_BILL);
 				}
 				break;
 			
@@ -180,16 +180,16 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.paybill();
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 2) {
 					try {
 						CurrenciesCore.paybill(args[1]);
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_PAYBILL);
+					Currencies.tell(sender, CURRENCIES_PAYBILL);
 				}
 				break;
 			
@@ -198,10 +198,10 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.credit(args[1], args[2], args[3]);
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_CREDIT);
+					Currencies.tell(sender, CURRENCIES_CREDIT);
 				}
 				break;
 			
@@ -210,10 +210,10 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.debit(args[1], args[2], args[3]);
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_DEBIT);
+					Currencies.tell(sender, CURRENCIES_DEBIT);
 				}
 				break;
 			
@@ -222,27 +222,27 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.bankrupt(args[1]);
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 3) {
 					try {
 						CurrenciesCore.bankrupt(args[1], args[2]);
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 4) {
 					try {
 						CurrenciesCore.bankrupt(args[1], args[2], args[3]);
 					} catch (CurrenciesException e) {
-						sender.sendMessage(e.getMessage());
+						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
-					sender.sendMessage(CURRENCIES_BANKRUPT);
+					Currencies.tell(sender, CURRENCIES_BANKRUPT);
 				}
 				break;
 			
 			default:
-				sender.sendMessage("Invalid subcommand: " + args[0]);
+				Currencies.tell(sender, "Invalid subcommand: " + args[0]);
 				//help(sender);
 		}
 	}

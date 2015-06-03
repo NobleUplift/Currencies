@@ -22,6 +22,13 @@ import com.nobleuplift.currencies.entities.Transaction;
 import com.nobleuplift.currencies.entities.Unit;
 
 public class Currencies extends JavaPlugin implements Listener {
+	public static final String PREFIX = "§a[Currencies]§r ";
+
+	public static final int CENTRAL_BANK = 1;
+	public static final int BANKER = 2;
+	public static final int BLACK_MARKET = 3;
+	public static final int TRADER = 4;
+	
 	protected static Currencies instance;
 	
 	protected static Currencies getInstance() {
@@ -92,5 +99,9 @@ public class Currencies extends JavaPlugin implements Listener {
 			pa.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 			Currencies.getInstance().getDatabase().save(pa);
 		}
+	}
+	
+	public static void tell(CommandSender player, String message) {
+		player.sendMessage(PREFIX + message);
 	}
 }

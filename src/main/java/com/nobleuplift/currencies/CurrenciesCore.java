@@ -293,36 +293,128 @@ public final class CurrenciesCore {
 	
 	@Transactional
 	public static void credit(String player, String acronym, String amount) throws CurrenciesException {
-		Account account = getAccountFromPlayer(player);
-		Currency currency = getCurrencyFromAcronym(acronym);
+		Account centralBank = getCentralBank();
+		Account account = getAccountFromPlayer(player, true);
+		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long addAmount = parseCurrency(currency, amount);
 		
-		Holding holding = Currencies.getInstance().getDatabase().find(Holding.class)
+		Unit base = Currencies.getInstance().getDatabase().find(Unit.class)
+			.where()
+			.eq("currency", currency)
+			.eq("childUnit", null)
+			.findUnique();
+		if (base == null) {
+			throw new CurrenciesException("Currency " + acronym + " has no base.");
+		}
+		
+		Holding fromHolding = Currencies.getInstance().getDatabase().find(Holding.class)
+			.where()
+			.eq("account", centralBank)
+			.eq("unit.currency", currency)
+			.eq("unit.childUnit", null)
+			.findUnique();
+		
+		if (fromHolding == null) {
+			fromHolding = new Holding();
+			fromHolding.setAccount(centralBank);
+			fromHolding.setUnit(base);
+			fromHolding.setAmount(0);
+		}
+		
+		long fromAmount = fromHolding.getAmount() - addAmount;
+		fromHolding.setAmount(fromAmount);
+		Currencies.getInstance().getDatabase().save(fromHolding);
+		
+		Holding toHolding = Currencies.getInstance().getDatabase().find(Holding.class)
 			.where()
 			.eq("account", account)
 			.eq("unit.currency", currency)
-			.eq("unit.prime", true).findUnique();
+			.eq("unit.childUnit", null)
+			.findUnique();
 		
-		holding.setAmount(holding.getAmount() + addAmount);
+		if (toHolding == null) {
+			toHolding = new Holding();
+			toHolding.setAccount(account);
+			toHolding.setUnit(base);
+			toHolding.setAmount(0);
+		}
 		
-		// TODO: Don't forget to log a transaction
+		long toAmount = toHolding.getAmount() + addAmount;
+		toHolding.setAmount(toAmount);
+		Currencies.getInstance().getDatabase().save(toHolding);
+		
+		/*Transaction t = new Transaction();
+		t.setSender(centralBank);
+		t.setRecipient(account);
+		t.setUnit(base);
+		t.setAmount(removeAmount);
+		t.setPaid(true);
+		t.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+		t.setDatePaid(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+		Currencies.getInstance().getDatabase().save(t);*/
 	}
 	
 	@Transactional
 	public static void debit(String player, String acronym, String amount) throws CurrenciesException {
-		Account account = getAccountFromPlayer(player);
-		Currency currency = getCurrencyFromAcronym(acronym);
+		Account account = getAccountFromPlayer(player, true);
+		Account centralBank = getCentralBank();
+		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long removeAmount = parseCurrency(currency, amount);
 		
-		Holding holding = Currencies.getInstance().getDatabase().find(Holding.class)
+		Unit base = Currencies.getInstance().getDatabase().find(Unit.class)
+			.where()
+			.eq("currency", currency)
+			.eq("childUnit", null)
+			.findUnique();
+		if (base == null) {
+			throw new CurrenciesException("Currency " + acronym + " has no base.");
+		}
+		
+		Holding fromHolding = Currencies.getInstance().getDatabase().find(Holding.class)
 			.where()
 			.eq("account", account)
 			.eq("unit.currency", currency)
-			.eq("unit.prime", true).findUnique();
+			.eq("unit.childUnit", null)
+			.findUnique();
 		
-		holding.setAmount(holding.getAmount() - removeAmount);
+		if (fromHolding == null) {
+			fromHolding = new Holding();
+			fromHolding.setAccount(account);
+			fromHolding.setUnit(base);
+			fromHolding.setAmount(0);
+		}
 		
-		// TODO: Don't forget to log a transaction
+		long fromAmount = fromHolding.getAmount() - removeAmount;
+		fromHolding.setAmount(fromAmount);
+		Currencies.getInstance().getDatabase().save(fromHolding);
+		
+		Holding toHolding = Currencies.getInstance().getDatabase().find(Holding.class)
+			.where()
+			.eq("account", centralBank)
+			.eq("unit.currency", currency)
+			.eq("unit.childUnit", null)
+			.findUnique();
+		
+		if (toHolding == null) {
+			toHolding = new Holding();
+			toHolding.setAccount(centralBank);
+			toHolding.setUnit(base);
+			toHolding.setAmount(0);
+		}
+		
+		long toAmount = toHolding.getAmount() + removeAmount;
+		toHolding.setAmount(toAmount);
+		Currencies.getInstance().getDatabase().save(toHolding);
+		
+		/*Transaction t = new Transaction();
+		t.setSender(account);
+		t.setRecipient(centralBank);
+		t.setUnit(base);
+		t.setAmount(removeAmount);
+		t.setPaid(true);
+		t.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+		t.setDatePaid(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+		Currencies.getInstance().getDatabase().save(t);*/
 	}
 	
 	public static void bankrupt(String player) throws CurrenciesException {
@@ -462,14 +554,42 @@ public final class CurrenciesCore {
 		return currency;
 	}
 	
-	public static Account getAccountFromPlayer(String player) {
+	public static Account getCentralBank() {
 		return Currencies.getInstance().getDatabase().find(Account.class)
-			.where().eq("name", player).findUnique();
+			.where().eq("id", Currencies.CENTRAL_BANK).findUnique();
 	}
 	
-	public static Currency getCurrencyFromAcronym(String acronym) {
-		return Currencies.getInstance().getDatabase().find(Currency.class)
+	public static Account getBanker() {
+		return Currencies.getInstance().getDatabase().find(Account.class)
+			.where().eq("id", Currencies.BANKER).findUnique();
+	}
+	
+	public static Account getBlackMarket() {
+		return Currencies.getInstance().getDatabase().find(Account.class)
+			.where().eq("id", Currencies.BLACK_MARKET).findUnique();
+	}
+	
+	public static Account getTrader() {
+		return Currencies.getInstance().getDatabase().find(Account.class)
+			.where().eq("id", Currencies.TRADER).findUnique();
+	}
+	
+	public static Account getAccountFromPlayer(String player, boolean exception) throws CurrenciesException {
+		Account account = Currencies.getInstance().getDatabase().find(Account.class)
+			.where().eq("name", player).findUnique();
+		if (account == null && exception) {
+			throw new CurrenciesException("Account " + player + " does not exist.");
+		}
+		return account;
+	}
+	
+	public static Currency getCurrencyFromAcronym(String acronym, boolean exception) throws CurrenciesException {
+		Currency currency = Currencies.getInstance().getDatabase().find(Currency.class)
 			.where().eq("acronym", acronym).findUnique();
+		if (currency == null && exception) {
+			throw new CurrenciesException("Currency " + acronym + " does not exist.");
+		}
+		return currency;
 	}
 	
 	public static Currency getCurrencyFromAmount(Account account, String currency) throws CurrenciesException {

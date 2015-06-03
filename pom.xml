@@ -4,7 +4,7 @@
 
 	<groupId>com.nobleuplift.currencies</groupId>
 	<artifactId>Currencies</artifactId>
-	<version>0.0.1-b026</version>
+	<version>0.0.1-b027</version>
 	<packaging>jar</packaging>
 
 	<name>Currencies</name>
@@ -114,7 +114,8 @@
 	<build>
 		<resources>
 			<resource>
-				<directory>src/main/java/com/nobleuplift/currencies</directory>
+				<directory>src/main/java</directory>
+				<targetPath>../filtered-sources/java</targetPath>
 				<filtering>true</filtering>
 		        <includes>
 		          <include>**/*.java</include>
@@ -128,6 +129,7 @@
 		        </includes>
 			</resource>
 		</resources>
+		<sourceDirectory>target/filtered-sources/java</sourceDirectory>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
