@@ -11,6 +11,7 @@ import com.avaje.ebean.annotation.Transactional;
 import com.nobleuplift.currencies.entities.Account;
 import com.nobleuplift.currencies.entities.Currency;
 import com.nobleuplift.currencies.entities.Holding;
+import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Unit;
 
 /**
@@ -315,9 +316,14 @@ public final class CurrenciesCore {
 			.findUnique();
 		
 		if (fromHolding == null) {
+			HoldingPK pk = new HoldingPK();
+			pk.setAccountId(centralBank.getId());
+			pk.setUnitId(base.getId());
+			
 			fromHolding = new Holding();
-			fromHolding.setAccount(centralBank);
-			fromHolding.setUnit(base);
+			fromHolding.setId(pk);
+			//fromHolding.setAccount(centralBank);
+			//fromHolding.setUnit(base);
 			fromHolding.setAmount(0);
 		}
 		
@@ -333,9 +339,14 @@ public final class CurrenciesCore {
 			.findUnique();
 		
 		if (toHolding == null) {
+			HoldingPK pk = new HoldingPK();
+			pk.setAccountId(account.getId());
+			pk.setUnitId(base.getId());
+			
 			toHolding = new Holding();
-			toHolding.setAccount(account);
-			toHolding.setUnit(base);
+			toHolding.setId(pk);
+			//toHolding.setAccount(account);
+			//toHolding.setUnit(base);
 			toHolding.setAmount(0);
 		}
 		
@@ -378,9 +389,14 @@ public final class CurrenciesCore {
 			.findUnique();
 		
 		if (fromHolding == null) {
+			HoldingPK pk = new HoldingPK();
+			pk.setAccountId(account.getId());
+			pk.setUnitId(base.getId());
+			
 			fromHolding = new Holding();
-			fromHolding.setAccount(account);
-			fromHolding.setUnit(base);
+			fromHolding.setId(pk);
+			//fromHolding.setAccount(account);
+			//fromHolding.setUnit(base);
 			fromHolding.setAmount(0);
 		}
 		
@@ -396,9 +412,14 @@ public final class CurrenciesCore {
 			.findUnique();
 		
 		if (toHolding == null) {
+			HoldingPK pk = new HoldingPK();
+			pk.setAccountId(centralBank.getId());
+			pk.setUnitId(base.getId());
+			
 			toHolding = new Holding();
-			toHolding.setAccount(centralBank);
-			toHolding.setUnit(base);
+			toHolding.setId(pk);
+			//toHolding.setAccount(centralBank);
+			//toHolding.setUnit(base);
 			toHolding.setAmount(0);
 		}
 		
