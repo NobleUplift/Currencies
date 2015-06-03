@@ -706,7 +706,7 @@ public final class CurrenciesCore {
 			}
 			
 			if (partUnit != null && partAmount != null) {
-				baseAmount += partUnit.getBaseMultiples() != 0 ? partAmount * partUnit.getBaseMultiples() : 1;
+				baseAmount += partUnit.getBaseMultiples() != 0 ? partAmount * partUnit.getBaseMultiples() : partAmount;
 				
 				if (Currencies.DEBUG) {
 					Currencies.getInstance().getLogger().info("PARSE CURRENCY - BASE AMOUNT: " + baseAmount);
