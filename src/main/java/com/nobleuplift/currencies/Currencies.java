@@ -23,6 +23,7 @@ import com.nobleuplift.currencies.entities.Unit;
 
 public class Currencies extends JavaPlugin implements Listener {
 	public static final String PREFIX = "§a[Currencies]§r ";
+	public static final boolean DEBUG = true;
 
 	public static final int CENTRAL_BANK = 1;
 	public static final int BANKER = 2;

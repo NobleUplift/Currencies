@@ -328,6 +328,9 @@ public final class CurrenciesCore {
 		}
 		
 		long fromAmount = fromHolding.getAmount() - addAmount;
+		if (Currencies.DEBUG) {
+			Currencies.getInstance().getLogger().info("CREDIT - FROM AMOUNT: " + fromAmount);
+		}
 		fromHolding.setAmount(fromAmount);
 		Currencies.getInstance().getDatabase().save(fromHolding);
 		
@@ -351,6 +354,9 @@ public final class CurrenciesCore {
 		}
 		
 		long toAmount = toHolding.getAmount() + addAmount;
+		if (Currencies.DEBUG) {
+			Currencies.getInstance().getLogger().info("CREDIT - TO AMOUNT: " + toAmount);
+		}
 		toHolding.setAmount(toAmount);
 		Currencies.getInstance().getDatabase().save(toHolding);
 		
@@ -401,6 +407,9 @@ public final class CurrenciesCore {
 		}
 		
 		long fromAmount = fromHolding.getAmount() - removeAmount;
+		if (Currencies.DEBUG) {
+			Currencies.getInstance().getLogger().info("DEBIT - FROM AMOUNT: " + fromAmount);
+		}
 		fromHolding.setAmount(fromAmount);
 		Currencies.getInstance().getDatabase().save(fromHolding);
 		
@@ -424,6 +433,9 @@ public final class CurrenciesCore {
 		}
 		
 		long toAmount = toHolding.getAmount() + removeAmount;
+		if (Currencies.DEBUG) {
+			Currencies.getInstance().getLogger().info("DEBIT - TO AMOUNT: " + toAmount);
+		}
 		toHolding.setAmount(toAmount);
 		Currencies.getInstance().getDatabase().save(toHolding);
 		
@@ -665,42 +677,21 @@ public final class CurrenciesCore {
 		
 		Unit partUnit = null;
 		Long partAmount = null;
-		/*Currency c = null;
 		
 		for (String part : parts) {
-			List<Unit> primes = Currencies.getInstance().getDatabase().find(Unit.class)
-				.where().eq("symbol", part).eq("prime", true).findList();
-			
-			if (primes.size() == 1) {
-				if (c != null) {
-					throw new CurrenciesException("Two prime units were provided in the currency string.");
-				}
-				
-				c = primes.get(0).getCurrency();
-			} else if (primes.size() > 1) {
-				if (account.getDefaultCurrency() == null) {
-					throw new CurrenciesException("This currency shares a prime unit with other currencies. You must run /currencies setdefault <currency>.");
-				}
-				
-				for (Unit p : primes) {
-					if (p.getCurrency().equals(account.getDefaultCurrency())) {
-						c = p.getCurrency();
-						break;
-					}
-				}
+			if (Currencies.DEBUG) {
+				Currencies.getInstance().getLogger().info("PARSE CURRENCY - PART: " + part);
 			}
-		}
-		
-		if (c == null) {
-			throw new CurrenciesException("No prime unit was located in your currency string.");
-		}*/
-		
-		for (String part : parts) {
+			
 			if (part.matches("\\D+")) {
 				partUnit = Currencies.getInstance().getDatabase().find(Unit.class)
 					.where().eq("currency_id", currency.getId()).eq("symbol", part).findUnique();
 				if (partUnit == null) {
 					throw new CurrenciesException(part + " is not a valid symbol.");
+				}
+				
+				if (Currencies.DEBUG) {
+					Currencies.getInstance().getLogger().info("PARSE CURRENCY - UNIT: " + partUnit.getName());
 				}
 			} else {
 				try {
@@ -708,14 +699,26 @@ public final class CurrenciesCore {
 				} catch (NumberFormatException e) {
 					throw new CurrenciesException(part + " could not be parsed into a number.");
 				}
+				
+				if (Currencies.DEBUG) {
+					Currencies.getInstance().getLogger().info("PARSE CURRENCY - PART AMOUNT: " + partAmount);
+				}
 			}
 			
 			if (partUnit != null && partAmount != null) {
 				baseAmount += partUnit.getBaseMultiples() != 0 ? partAmount * partUnit.getBaseMultiples() : 1;
 				
+				if (Currencies.DEBUG) {
+					Currencies.getInstance().getLogger().info("PARSE CURRENCY - BASE AMOUNT: " + baseAmount);
+				}
+				
 				partUnit = null;
 				partAmount = null;
 			}
+		}
+		
+		if (Currencies.DEBUG) {
+			Currencies.getInstance().getLogger().info("PARSE CURRENCY - FINAL AMOUNT: " + baseAmount);
 		}
 		
 		return baseAmount;
