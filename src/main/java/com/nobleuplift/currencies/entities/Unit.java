@@ -19,7 +19,7 @@ public class Unit implements Serializable {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(unique=true, nullable=false)
-	private Integer id;
+	private Short id;
 
 	@Column(nullable=false, length=32)
 	private String alternate;
@@ -73,11 +73,11 @@ public class Unit implements Serializable {
 	public Unit() {
 	}
 
-	public Integer getId() {
+	public Short getId() {
 		return this.id;
 	}
 
-	public void setId(Integer id) {
+	public void setId(Short id) {
 		this.id = id;
 	}
 
@@ -121,10 +121,6 @@ public class Unit implements Serializable {
 		this.dateModified = dateModified;
 	}
 
-	public boolean isMain() {
-		return this.main;
-	}
-
 	public boolean getMain() {
 		return this.main;
 	}
@@ -139,10 +135,6 @@ public class Unit implements Serializable {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public boolean isPrime() {
-		return this.prime;
 	}
 
 	public boolean getPrime() {

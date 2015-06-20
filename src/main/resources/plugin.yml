@@ -18,11 +18,14 @@ commands:
             ${currencies.addprime}
             ${currencies.addparent}
             ${currencies.addchild}
+            ${currencies.list}
             ${currencies.openaccount}
+            ${currencies.setdefault}
             ${currencies.balance}
             ${currencies.pay}
             ${currencies.bill}
             ${currencies.paybill}
+            ${currencies.transactions}
             ${currencies.credit}
             ${currencies.debit}
             ${currencies.bankrupt}

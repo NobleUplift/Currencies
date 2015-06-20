@@ -1,10 +1,12 @@
 package com.nobleuplift.currencies;
 
+import java.util.List;
 import java.util.Map;
 
 import org.bukkit.command.CommandSender;
 
 import com.nobleuplift.currencies.entities.Currency;
+import com.nobleuplift.currencies.entities.Transaction;
 
 /**
  * Created on 2015 May 2nd at 04:10:01 PM.
@@ -17,10 +19,14 @@ public final class CurrenciesCommand {
 	public static final String CURRENCIES_ADDPRIME = "${currencies.addprime}";
 	public static final String CURRENCIES_ADDPARENT = "${currencies.addparent}";
 	public static final String CURRENCIES_ADDCHILD = "${currencies.addchild}";
+	public static final String CURRENCIES_LIST = "${currencies.list}";
+	public static final String CURRENCIES_OPENACCOUNT = "${currencies.openaccount}";
+	public static final String CURRENCIES_SETDEFAULT = "${currencies.setdefault}";
 	public static final String CURRENCIES_BALANCE = "${currencies.balance}";
 	public static final String CURRENCIES_PAY = "${currencies.pay}";
 	public static final String CURRENCIES_BILL = "${currencies.bill}";
 	public static final String CURRENCIES_PAYBILL = "${currencies.paybill}";
+	public static final String CURRENCIES_TRANSACTIONS = "${currencies.transactions}";
 	public static final String CURRENCIES_CREDIT= "${currencies.credit}";
 	public static final String CURRENCIES_DEBIT = "${currencies.debit}";
 	public static final String CURRENCIES_BANKRUPT = "${currencies.bankrupt}";
@@ -118,31 +124,97 @@ public final class CurrenciesCommand {
 				}
 				break;
 			
+			case "list":
+				if (args.length > 0) {
+					List<Currency> currencies = null;
+					try {
+						int page = 0;
+						if (args.length == 2) {
+							try {
+								page = Integer.parseInt(args[1]);
+							} catch (NumberFormatException e) {
+								throw new CurrenciesException(args[1] + " is not a valid integer.");
+							}
+							
+							currencies = CurrenciesCore.list(page);
+						} else {
+							currencies = CurrenciesCore.list();
+						}
+						
+						Currencies.tell(sender, "--------------------");
+						Currencies.tell(sender, "Currencies " + ((page * 10) + 1) + " through " + ((page * 10) + 10) + ":");
+						for (Currency currency : currencies) {
+							sender.sendMessage(currency.getId() + ". " + currency.getName() + " (" + currency.getAcronym() + ")");
+						}
+						Currencies.tell(sender, "--------------------");
+					} catch (CurrenciesException e) {
+						Currencies.tell(sender, e.getMessage());
+					}
+				} else {
+					Currencies.tell(sender, CURRENCIES_LIST);
+				}
+				break;
+				
+			case "openaccount":
+				if (args.length == 2) {
+					try {
+						CurrenciesCore.openAccount(args[1]);
+						Currencies.tell(sender, "Created new account " + args[1] + ".");
+					} catch (CurrenciesException e) {
+						Currencies.tell(sender, e.getMessage());
+					}
+				} else {
+					Currencies.tell(sender, CURRENCIES_OPENACCOUNT);
+				}
+				break;
+				
+			case "setdefault":
+				if (args.length == 2) {
+					try {
+						CurrenciesCore.setDefault(sender.getName(), args[1]);
+						Currencies.tell(sender, "Your default currency is now " + args[1] + ".");
+					} catch (CurrenciesException e) {
+						Currencies.tell(sender, e.getMessage());
+					}
+				} else {
+					Currencies.tell(sender, CURRENCIES_SETDEFAULT);
+				}
+				break;
+			
 			case "balance":
 				if (args.length == 1) {
 					try {
 						Map<Currency, Long> currencies = CurrenciesCore.balance(sender.getName());
+						Currencies.tell(sender, "--------------------");
+						Currencies.tell(sender, "Your balance: ");
 						for (Map.Entry<Currency, Long> entry : currencies.entrySet()) {
-							Currencies.tell(sender, CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
+							Currencies.tell(sender, entry.getKey().getName() + ": " + CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
 						}
+						Currencies.tell(sender, "--------------------");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 2) {
 					try {
 						Map<Currency, Long> currencies = CurrenciesCore.balance(args[1]);
+						Currencies.tell(sender, "--------------------");
+						Currencies.tell(sender, args[1] + "'s balance: ");
 						for (Map.Entry<Currency, Long> entry : currencies.entrySet()) {
-							Currencies.tell(sender, CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
+							Currencies.tell(sender, entry.getKey().getName() + ": " + CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
 						}
+						Currencies.tell(sender, "--------------------");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 3) {
 					try {
 						Map<Currency, Long> currencies = CurrenciesCore.balance(args[1], args[2]);
+						Currencies.tell(sender, "--------------------");
+						Currencies.tell(sender, args[1] + "'s balance: ");
 						for (Map.Entry<Currency, Long> entry : currencies.entrySet()) {
-							Currencies.tell(sender, CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
+							Currencies.tell(sender, entry.getKey().getName() + ": " + CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
 						}
+						Currencies.tell(sender, "--------------------");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -155,6 +227,7 @@ public final class CurrenciesCommand {
 				if (args.length == 4) {
 					try {
 						CurrenciesCore.pay(sender.getName(), args[1], args[2], args[3]);
+						Currencies.tell(sender, "Paid " + args[1] + " " + args[3] + " " + args[2] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -167,6 +240,7 @@ public final class CurrenciesCommand {
 				if (args.length == 4) {
 					try {
 						CurrenciesCore.bill(sender.getName(), args[1], args[2], args[3]);
+						Currencies.tell(sender, "Sent " + args[1] + "a bill for " + args[3] + " " + args[2] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -178,13 +252,14 @@ public final class CurrenciesCommand {
 			case "paybill":
 				if (args.length == 1) {
 					try {
-						CurrenciesCore.paybill();
+						Transaction t = CurrenciesCore.paybill(sender.getName());
+						
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 2) {
 					try {
-						CurrenciesCore.paybill(args[1]);
+						CurrenciesCore.paybill(sender.getName(), args[1]);
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -197,6 +272,7 @@ public final class CurrenciesCommand {
 				if (args.length == 4) {
 					try {
 						CurrenciesCore.credit(args[1], args[2], args[3]);
+						Currencies.tell(sender, "You have credited " + args[3] + " " + args[2] + " to " + args[1] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -209,6 +285,7 @@ public final class CurrenciesCommand {
 				if (args.length == 4) {
 					try {
 						CurrenciesCore.debit(args[1], args[2], args[3]);
+						Currencies.tell(sender, "You have debited " + args[3] + " " + args[2] + " from " + args[1] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}

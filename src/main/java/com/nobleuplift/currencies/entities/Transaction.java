@@ -1,9 +1,7 @@
 package com.nobleuplift.currencies.entities;
 
 import java.io.Serializable;
-
 import javax.persistence.*;
-
 import java.sql.Timestamp;
 
 
@@ -19,11 +17,8 @@ public class Transaction implements Serializable {
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
-	@Column(updatable=false, unique=true, nullable=false)
+	@Column(unique=true, nullable=false)
 	private Long id;
-
-	@Column(nullable=false)
-	private long amount;
 
 	@Column(name="date_created", nullable=false)
 	private Timestamp dateCreated;
@@ -31,8 +26,17 @@ public class Transaction implements Serializable {
 	@Column(name="date_paid")
 	private Timestamp datePaid;
 
+	@Column(name="final_recipient_amount")
+	private Long finalRecipientAmount;
+
+	@Column(name="final_sender_amount")
+	private Long finalSenderAmount;
+
 	@Column(nullable=false)
 	private boolean paid;
+
+	@Column(name="transaction_amount", nullable=false)
+	private long transactionAmount;
 
 	//bi-directional many-to-one association to Account
 	@ManyToOne
@@ -60,14 +64,6 @@ public class Transaction implements Serializable {
 		this.id = id;
 	}
 
-	public long getAmount() {
-		return this.amount;
-	}
-
-	public void setAmount(long amount) {
-		this.amount = amount;
-	}
-
 	public Timestamp getDateCreated() {
 		return this.dateCreated;
 	}
@@ -84,8 +80,20 @@ public class Transaction implements Serializable {
 		this.datePaid = datePaid;
 	}
 
-	public boolean isPaid() {
-		return this.paid;
+	public Long getFinalRecipientAmount() {
+		return this.finalRecipientAmount;
+	}
+
+	public void setFinalRecipientAmount(Long finalRecipientAmount) {
+		this.finalRecipientAmount = finalRecipientAmount;
+	}
+
+	public Long getFinalSenderAmount() {
+		return this.finalSenderAmount;
+	}
+
+	public void setFinalSenderAmount(Long finalSenderAmount) {
+		this.finalSenderAmount = finalSenderAmount;
 	}
 
 	public boolean getPaid() {
@@ -94,6 +102,14 @@ public class Transaction implements Serializable {
 
 	public void setPaid(boolean paid) {
 		this.paid = paid;
+	}
+
+	public long getTransactionAmount() {
+		return this.transactionAmount;
+	}
+
+	public void setTransactionAmount(long transactionAmount) {
+		this.transactionAmount = transactionAmount;
 	}
 
 	public Account getSender() {

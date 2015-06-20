@@ -93,10 +93,6 @@ public class Currency implements Serializable {
 		this.dateModified = dateModified;
 	}
 
-	public boolean isDeleted() {
-		return this.deleted;
-	}
-
 	public boolean getDeleted() {
 		return this.deleted;
 	}
@@ -111,10 +107,6 @@ public class Currency implements Serializable {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public boolean isPrefix() {
-		return this.prefix;
 	}
 
 	public boolean getPrefix() {
