@@ -120,6 +120,10 @@ public class Unit implements Serializable {
 	public void setDateModified(Timestamp dateModified) {
 		this.dateModified = dateModified;
 	}
+	
+	public boolean isMain() {
+		return this.main;
+	}
 
 	public boolean getMain() {
 		return this.main;
@@ -135,6 +139,10 @@ public class Unit implements Serializable {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	public boolean isPrime() {
+		return this.prime;
 	}
 
 	public boolean getPrime() {
