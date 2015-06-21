@@ -375,7 +375,7 @@ public final class CurrenciesCore {
 	}
 	
 	@Transactional
-	public static void paybill(String from, String transaction) throws CurrenciesException {
+	public static Transaction paybill(String from, String transaction) throws CurrenciesException {
 		Transaction t = null;
 		if (transaction == null) {
 			Account account = getAccountFromPlayer(from, true);
@@ -402,18 +402,15 @@ public final class CurrenciesCore {
 		t.setPaid(true);
 		t.setDatePaid(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(t);
+		return t;
 	}
 	
-	public static List<Transaction> transactions() throws CurrenciesException {
-		return transactions(1, null);
-	}
-	
-	public static List<Transaction> transactions(int page) throws CurrenciesException {
-		return transactions(page, null);
+	public static List<Transaction> transactions(String player) throws CurrenciesException {
+		return transactions(player, 1);
 	}
 	
 	@Transactional
-	public static List<Transaction> transactions(int page, String player) throws CurrenciesException {
+	public static List<Transaction> transactions(String player, int page) throws CurrenciesException {
 		Account account = getAccountFromPlayer(player, false);
 		
 		return Currencies.getInstance().getDatabase()

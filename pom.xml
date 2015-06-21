@@ -28,7 +28,7 @@
 		<currencies.pay>/currencies pay &lt;player&gt; &lt;acronym&gt; &lt;amount&gt;</currencies.pay>
 		<currencies.bill>/currencies bill &lt;player&gt; &lt;acronym&gt; &lt;amount&gt;</currencies.bill>
 		<currencies.paybill>/currencies paybill &lt;transaction&gt;</currencies.paybill>
-		<currencies.transactions>/currencies transactions [page] [player]</currencies.transactions>
+		<currencies.transactions>/currencies transactions [player] [page]</currencies.transactions>
 		<currencies.credit>/currencies credit &lt;player&gt; &lt;acronym&gt; &lt;amount&gt;</currencies.credit>
 		<currencies.debit>/currencies debit &lt;player&gt; &lt;acronym&gt; &lt;amount&gt;</currencies.debit>
 		<currencies.bankrupt>/currencies bankrupt &lt;player&gt; [acronym] [amount]</currencies.bankrupt>

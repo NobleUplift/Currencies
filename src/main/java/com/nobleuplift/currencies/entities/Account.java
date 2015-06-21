@@ -33,24 +33,7 @@ public class Account implements Serializable {
 	@Column(length=37)
 	private String uuid;
 
-	//bi-directional many-to-many association to Account
-	@ManyToMany
-	@JoinTable(
-		name="currencies_holder"
-		, joinColumns={
-			@JoinColumn(name="child_account_id", nullable=false)
-			}
-		, inverseJoinColumns={
-			@JoinColumn(name="parent_account_id", nullable=false)
-			}
-		)
-	private List<Account> parentAccounts;
-
-	//bi-directional many-to-many association to Account
-	@ManyToMany(mappedBy="parentAccounts")
-	private List<Account> childAccounts;
-
-	//bi-directional many-to-many association to Account
+	//uni-directional many-to-many association to Account
 	@ManyToMany
 	@JoinTable(
 		name="currencies_holder"
@@ -63,8 +46,17 @@ public class Account implements Serializable {
 		)
 	private List<Account> parentAccounts;
 
-	//bi-directional many-to-many association to Account
-	@ManyToMany(mappedBy="parentAccounts")
+	//uni-directional many-to-many association to Account
+	@ManyToMany
+	@JoinTable(
+		name="currencies_holder"
+		, joinColumns={
+			@JoinColumn(name="child_account_id", nullable=false)
+			}
+		, inverseJoinColumns={
+			@JoinColumn(name="parent_account_id", nullable=false)
+			}
+		)
 	private List<Account> childAccounts;
 
 	//bi-directional many-to-one association to Currency
@@ -125,22 +117,6 @@ public class Account implements Serializable {
 
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
-	}
-
-	public List<Account> getParentAccounts() {
-		return this.parentAccounts;
-	}
-
-	public void setParentAccounts(List<Account> parentAccounts) {
-		this.parentAccounts = parentAccounts;
-	}
-
-	public List<Account> getChildAccounts() {
-		return this.childAccounts;
-	}
-
-	public void setChildAccounts(List<Account> childAccounts) {
-		this.childAccounts = childAccounts;
 	}
 
 	public List<Account> getParentAccounts() {

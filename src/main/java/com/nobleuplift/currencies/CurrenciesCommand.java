@@ -253,13 +253,14 @@ public final class CurrenciesCommand {
 				if (args.length == 1) {
 					try {
 						Transaction t = CurrenciesCore.paybill(sender.getName());
-						
+						Currencies.tell(sender, "Paid transaction " + t.getId() + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 2) {
 					try {
-						CurrenciesCore.paybill(sender.getName(), args[1]);
+						Transaction t = CurrenciesCore.paybill(sender.getName(), args[1]);
+						Currencies.tell(sender, "Paid transaction " + t.getId() + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -268,6 +269,45 @@ public final class CurrenciesCommand {
 				}
 				break;
 			
+			case "transactions":
+				if (args.length > 0) {
+					List<Transaction> transactions = null;
+					try {
+						int page = 0;
+						if (args.length == 3) {
+							try {
+								page = Integer.parseInt(args[2]);
+							} catch (NumberFormatException e) {
+								throw new CurrenciesException(args[1] + " is not a valid integer.");
+							}
+							
+							transactions = CurrenciesCore.transactions(args[1], page);
+						} else if (args.length == 2) {
+							try {
+								page = Integer.parseInt(args[1]);
+							} catch (NumberFormatException e) {
+								throw new CurrenciesException(args[1] + " is not a valid integer.");
+							}
+							
+							transactions = CurrenciesCore.transactions(sender.getName(), page);
+						} else {
+							transactions = CurrenciesCore.transactions(sender.getName());
+						}
+						
+						Currencies.tell(sender, "--------------------");
+						Currencies.tell(sender, "Transactions " + ((page * 10) + 1) + " through " + ((page * 10) + 10) + ":");
+						for (Transaction t : transactions) {
+							sender.sendMessage(t.getId() + ". From " + t.getSender() + " to " + t.getRecipient() + ": " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + "Paid: " + t.getPaid());
+						}
+						Currencies.tell(sender, "--------------------");
+					} catch (CurrenciesException e) {
+						Currencies.tell(sender, e.getMessage());
+					}
+				} else {
+					Currencies.tell(sender, CURRENCIES_TRANSACTIONS);
+				}
+				break;
+				
 			case "credit":
 				if (args.length == 4) {
 					try {
