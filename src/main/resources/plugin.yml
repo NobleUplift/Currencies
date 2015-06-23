@@ -10,7 +10,7 @@ database: true
 
 commands:
     currencies:
-        description: 
+        description: The central command for Currencies.
         aliases: cur
         usage: | 
             ${currencies.create}
@@ -29,3 +29,33 @@ commands:
             ${currencies.credit}
             ${currencies.debit}
             ${currencies.bankrupt}
+    openaccount:
+        description: Opens a bank account usually for a non-player.
+        usage: ${currencies.openaccount}
+    setdefault:
+        description: Set your default currency.
+        usage: ${currencies.setdefault}
+    balance:
+        description: Check your balance.
+        usage: ${currencies.balance}
+	pay:
+	    description: Pay another account.
+	    usage: ${currencies.pay}
+	bill:
+	    description: Bill another account.
+	    usage: ${currencies.bill}
+	paybill:
+	    description: Pay a bill you received from another account.
+	    usage: ${currencies.paybill}
+	transactions:
+	    description: See your transaction history.
+	    usage: ${currencies.transactions}
+	credit:
+	    description: Admin command for giving a player money.
+	    usage: ${currencies.credit}
+	debit:
+	    description: Admin command for removing a player's money.
+	    usage: ${currencies.debit}
+	bankrupt:
+	    description: Admin command for setting/resetting a player's balance.
+	    usage: ${currencies.bankrupt}
