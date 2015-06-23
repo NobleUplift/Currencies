@@ -128,7 +128,7 @@ public final class CurrenciesCommand {
 				if (args.length > 0) {
 					List<Currency> currencies = null;
 					try {
-						int page = 0;
+						int page = 1;
 						if (args.length == 2) {
 							try {
 								page = Integer.parseInt(args[1]);
@@ -142,7 +142,7 @@ public final class CurrenciesCommand {
 						}
 						
 						Currencies.tell(sender, "--------------------");
-						Currencies.tell(sender, "Currencies " + ((page * 10) + 1) + " through " + ((page * 10) + 10) + ":");
+						Currencies.tell(sender, "Currencies " + (((page - 1) * 10) + 1) + " through " + (((page - 1) * 10) + 10) + ":");
 						for (Currency currency : currencies) {
 							sender.sendMessage(currency.getId() + ". " + currency.getName() + " (" + currency.getAcronym() + ")");
 						}
@@ -273,12 +273,12 @@ public final class CurrenciesCommand {
 				if (args.length > 0) {
 					List<Transaction> transactions = null;
 					try {
-						int page = 0;
+						int page = 1;
 						if (args.length == 3) {
 							try {
 								page = Integer.parseInt(args[2]);
 							} catch (NumberFormatException e) {
-								throw new CurrenciesException(args[1] + " is not a valid integer.");
+								throw new CurrenciesException(args[2] + " is not a valid integer.");
 							}
 							
 							transactions = CurrenciesCore.transactions(args[1], page);
@@ -295,9 +295,9 @@ public final class CurrenciesCommand {
 						}
 						
 						Currencies.tell(sender, "--------------------");
-						Currencies.tell(sender, "Transactions " + ((page * 10) + 1) + " through " + ((page * 10) + 10) + ":");
+						Currencies.tell(sender, "Transactions " + (((page - 1) * 10) + 1) + " through " + (((page - 1) * 10) + 10) + ":");
 						for (Transaction t : transactions) {
-							sender.sendMessage(t.getId() + ". From " + t.getSender() + " to " + t.getRecipient() + ": " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + "Paid: " + t.getPaid());
+							sender.sendMessage(t.getId() + ". From " + t.getSender().getName() + " to " + t.getRecipient().getName() + ": " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " - Paid: " + t.getPaid());
 						}
 						Currencies.tell(sender, "--------------------");
 					} catch (CurrenciesException e) {

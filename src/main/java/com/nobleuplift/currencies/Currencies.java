@@ -69,16 +69,43 @@ public class Currencies extends JavaPlugin implements Listener {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		String command = cmd.getName().toLowerCase();
 		
-		if (command.equals("currencies")) {
-			if (args.length == 0) {
-				CurrenciesCommand.help(sender);
-			} else {
-				CurrenciesCommand.subcommands(sender, args);
-			}
-			return true;
-		} else {
-			return false;
+		switch (command) {
+			case "currencies":
+				if (args.length == 0) {
+					CurrenciesCommand.help(sender);
+				} else {
+					CurrenciesCommand.subcommands(sender, args);
+				}
+				return true;
+			
+			case "openaccount":
+			case "setdefault":
+			case "balance":
+			case "pay":
+			case "bill":
+			case "paybill":
+			case "transactions":
+			case "credit":
+			case "debit":
+			case "bankrupt":
+				CurrenciesCommand.subcommands(sender, arrayPrepend(args, command));
+				return true;
+			
+			default:
+				return false;
 		}
+	}
+	
+	private String[] arrayPrepend(String[] args, String prepend) {
+		String[] retval = new String[args.length + 1];
+		
+		retval[0] = prepend;
+		
+		for (int i = 0; i < args.length; i++) {
+			retval[i + 1] = args[i];
+		}
+		
+		return retval;
 	}
 	
 	@EventHandler

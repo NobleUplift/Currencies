@@ -274,7 +274,7 @@ public final class CurrenciesCore {
 	public static List<Currency> list(int page) throws CurrenciesException {
 		return Currencies.getInstance().getDatabase()
 			.find(Currency.class)
-			.setFirstRow(page * 10)
+			.setFirstRow((page - 1) * 10)
 			.setMaxRows(10)
 			.findList();
 		
@@ -419,7 +419,7 @@ public final class CurrenciesCore {
 			.disjunction()
 			.eq("sender", account)
 			.eq("recipient", account)
-			.setFirstRow(page * 10)
+			.setFirstRow((page - 1) * 10)
 			.setMaxRows(10)
 			.findList();
 	}
@@ -591,7 +591,7 @@ public final class CurrenciesCore {
 		return currencyBaseAmount;
 	}
 	
-	protected static void compactHoldings(Account account ) {
+	private static void compactHoldings(Account account ) {
 		List<Holding> holdings = account.getHoldings();
 		Map<Currency, Long> swapMap = new HashMap<>();
 		
