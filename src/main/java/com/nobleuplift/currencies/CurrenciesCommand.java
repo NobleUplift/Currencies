@@ -47,6 +47,11 @@ public final class CurrenciesCommand {
 	}
 	
 	protected static void subcommands(CommandSender sender, String[] args) {
+		if (!sender.hasPermission("currencies." + args[0].toLowerCase())) {
+			Currencies.tell(sender, "You require the permission currencies." + args[0].toLowerCase() + " to run this command.");
+			return;
+		}
+		
 		switch (args[0].toLowerCase()) {
 			case "create":
 				if (args.length == 3) {
@@ -297,7 +302,9 @@ public final class CurrenciesCommand {
 						Currencies.tell(sender, "--------------------");
 						Currencies.tell(sender, "Transactions " + (((page - 1) * 10) + 1) + " through " + (((page - 1) * 10) + 10) + ":");
 						for (Transaction t : transactions) {
-							sender.sendMessage(t.getId() + ". From " + t.getSender().getName() + " to " + t.getRecipient().getName() + ": " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " - Paid: " + t.getPaid());
+							sender.sendMessage(t.getId() + ". From " + t.getSender().getName() + " to " + t.getRecipient().getName() + 
+								": " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + 
+								t.getPaid() == null ? "Not Paid" : t.getPaid() ? "Paid" : "Rejected");
 						}
 						Currencies.tell(sender, "--------------------");
 					} catch (CurrenciesException e) {
@@ -345,12 +352,14 @@ public final class CurrenciesCommand {
 				} else if (args.length == 3) {
 					try {
 						CurrenciesCore.bankrupt(args[1], args[2]);
+						Currencies.tell(sender, "Account " + args[1] + " has bankrupted on currency " + args[2] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 4) {
 					try {
 						CurrenciesCore.bankrupt(args[1], args[2], args[3]);
+						Currencies.tell(sender, "Account " + args[1] + " has bankrupted on currency " + args[2] + " but has been given a starting balance of " + args[3] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}

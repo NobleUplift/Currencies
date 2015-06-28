@@ -94,6 +94,10 @@ public class Transaction implements Serializable {
 	public void setFinalSenderAmount(Long finalSenderAmount) {
 		this.finalSenderAmount = finalSenderAmount;
 	}
+	
+	public Boolean isPaid() {
+		return this.paid;
+	}
 
 	public Boolean getPaid() {
 		return this.paid;

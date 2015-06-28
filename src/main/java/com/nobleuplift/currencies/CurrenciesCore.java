@@ -421,6 +421,7 @@ public final class CurrenciesCore {
 			.disjunction()
 			.eq("sender", account)
 			.eq("recipient", account)
+			.orderBy("dateModified DESC")
 			.setFirstRow((page - 1) * 10)
 			.setMaxRows(10)
 			.findList();
