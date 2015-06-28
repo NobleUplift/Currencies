@@ -304,7 +304,7 @@ public final class CurrenciesCommand {
 						for (Transaction t : transactions) {
 							sender.sendMessage(t.getId() + ". From " + t.getSender().getName() + " to " + t.getRecipient().getName() + 
 								": " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + 
-								t.getPaid() == null ? "Not Paid" : t.getPaid() ? "Paid" : "Rejected");
+								(t.getPaid() == null ? "Not Paid" : (t.getPaid() ? "Paid" : "Rejected")));
 						}
 						Currencies.tell(sender, "--------------------");
 					} catch (CurrenciesException e) {
