@@ -718,7 +718,10 @@ public final class CurrenciesCore {
 	
 	public static long parseCurrency(Currency currency, String amount) throws CurrenciesException {
 		// http://stackoverflow.com/questions/2206378/how-to-split-a-string-but-also-keep-the-delimiters
-		String[] parts = amount.replaceAll("([0-9-]+\\D+)", "$1 ").trim().split(" ");
+		String[] parts = amount.replaceAll("([0-9-]+)", "|$1|").replaceAll("(^\\|*)|(\\|*$)","").split("\\|");
+		if (Currencies.DEBUG) {
+			Currencies.getInstance().getLogger().info("PARSE CURRENCY - ALL: " + parts);
+		}
 		
 		if (parts.length == 0 || parts.length == 1) {
 			throw new CurrenciesException("Either no symbol or no currency amount was provided.");
@@ -732,10 +735,6 @@ public final class CurrenciesCore {
 		for (String part : parts) {
 			if (Currencies.DEBUG) {
 				Currencies.getInstance().getLogger().info("PARSE CURRENCY - PART: " + part);
-			}
-			
-			if ("".equals(part)) {
-				continue;
 			}
 			
 			if (part.matches("\\D+")) {
