@@ -421,7 +421,7 @@ public final class CurrenciesCore {
 			.disjunction()
 			.eq("sender", account)
 			.eq("recipient", account)
-			.orderBy("dateModified DESC")
+			.orderBy("dateCreated DESC")
 			.setFirstRow((page - 1) * 10)
 			.setMaxRows(10)
 			.findList();
@@ -574,6 +574,11 @@ public final class CurrenciesCore {
 	
 	protected static Map<Currency, Long> summateHoldings(List<Holding> holdings) {
 		Map<Currency, Long> currencyBaseAmount = new HashMap<>();
+		
+		if (holdings.size() == 0) {
+			return currencyBaseAmount;
+		}
+		
 		for (Holding h : holdings) {
 			Unit u = h.getUnit();
 			Currency c = u.getCurrency();
