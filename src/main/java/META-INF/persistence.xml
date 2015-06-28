@@ -3,8 +3,10 @@
 		<class>com.nobleuplift.currencies.entities.Currency</class>
 		<class>com.nobleuplift.currencies.entities.Holding</class>
 		<class>com.nobleuplift.currencies.entities.HoldingPK</class>
-		<class>com.nobleuplift.currencies.entities.Transaction</class>
 		<class>com.nobleuplift.currencies.entities.Unit</class>
 		<class>com.nobleuplift.currencies.entities.Account</class>
+		<class>com.nobleuplift.currencies.entities.CurrenciesHolder</class>
+		<class>com.nobleuplift.currencies.entities.CurrenciesHolderPK</class>
+		<class>com.nobleuplift.currencies.entities.Transaction</class>
 	</persistence-unit>
 </persistence>

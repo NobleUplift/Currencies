@@ -144,7 +144,7 @@ public final class CurrenciesCommand {
 						Currencies.tell(sender, "--------------------");
 						Currencies.tell(sender, "Currencies " + (((page - 1) * 10) + 1) + " through " + (((page - 1) * 10) + 10) + ":");
 						for (Currency currency : currencies) {
-							sender.sendMessage(currency.getId() + ". " + currency.getName() + " (" + currency.getAcronym() + ")");
+							Currencies.tell(sender, currency.getId() + ". " + currency.getName() + " (" + currency.getAcronym() + ")");
 						}
 						Currencies.tell(sender, "--------------------");
 					} catch (CurrenciesException e) {
@@ -338,6 +338,7 @@ public final class CurrenciesCommand {
 				if (args.length == 2) {
 					try {
 						CurrenciesCore.bankrupt(args[1]);
+						Currencies.tell(sender, "Account " + args[1] + " has bankrupted on all currencies.");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}

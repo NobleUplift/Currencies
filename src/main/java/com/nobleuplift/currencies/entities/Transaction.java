@@ -32,8 +32,7 @@ public class Transaction implements Serializable {
 	@Column(name="final_sender_amount")
 	private Long finalSenderAmount;
 
-	@Column(nullable=false)
-	private boolean paid;
+	private Boolean paid;
 
 	@Column(name="transaction_amount", nullable=false)
 	private long transactionAmount;
@@ -95,16 +94,12 @@ public class Transaction implements Serializable {
 	public void setFinalSenderAmount(Long finalSenderAmount) {
 		this.finalSenderAmount = finalSenderAmount;
 	}
-	
-	public boolean isPaid() {
+
+	public Boolean getPaid() {
 		return this.paid;
 	}
 
-	public boolean getPaid() {
-		return this.paid;
-	}
-
-	public void setPaid(boolean paid) {
+	public void setPaid(Boolean paid) {
 		this.paid = paid;
 	}
 

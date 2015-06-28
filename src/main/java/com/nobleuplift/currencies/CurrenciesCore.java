@@ -364,9 +364,11 @@ public final class CurrenciesCore {
 		t.setTransactionAmount(billAmount);
 		t.setFinalSenderAmount(null);
 		t.setFinalRecipientAmount(null);
-		t.setPaid(false);
+		t.setPaid(null);
 		t.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		t.setDatePaid(null);
+		Currencies.getInstance().getDatabase().save(t);
+		
 		return t;
 	}
 	
@@ -461,7 +463,7 @@ public final class CurrenciesCore {
 		Account account = Currencies.getInstance().getDatabase().find(Account.class)
 			.where().eq("name", player).findUnique();
 		
-		if (amount == null) {
+		if (amount != null) {
 			Currency currency = getCurrencyFromAcronym(acronym, true);
 			Unit base = getBaseUnit(currency);
 			long bankruptAmount = parseCurrency(currency, amount);
@@ -483,7 +485,7 @@ public final class CurrenciesCore {
 			Currencies.getInstance().getDatabase().save(h);
 			
 			return holdings;
-		} else if (acronym == null) {
+		} else if (acronym != null) {
 			Currency currency = getCurrencyFromAcronym(acronym, true);
 			
 			// Delete all of a player's holdings equal to this currency
@@ -716,7 +718,7 @@ public final class CurrenciesCore {
 	
 	public static long parseCurrency(Currency currency, String amount) throws CurrenciesException {
 		// http://stackoverflow.com/questions/2206378/how-to-split-a-string-but-also-keep-the-delimiters
-		String[] parts = amount.split("((?<=\\D)|(?=\\D))");
+		String[] parts = amount.replaceAll("([0-9-]+\\D+)", "$1|").split("|");
 		
 		if (parts.length == 0 || parts.length == 1) {
 			throw new CurrenciesException("Either no symbol or no currency amount was provided.");
@@ -730,6 +732,10 @@ public final class CurrenciesCore {
 		for (String part : parts) {
 			if (Currencies.DEBUG) {
 				Currencies.getInstance().getLogger().info("PARSE CURRENCY - PART: " + part);
+			}
+			
+			if ("".equals(part)) {
+				continue;
 			}
 			
 			if (part.matches("\\D+")) {

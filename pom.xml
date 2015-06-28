@@ -4,7 +4,7 @@
 
 	<groupId>com.nobleuplift.currencies</groupId>
 	<artifactId>Currencies</artifactId>
-	<version>0.0.1-b035</version>
+	<version>0.0.1-b036</version>
 	<packaging>jar</packaging>
 
 	<name>Currencies</name>
@@ -27,7 +27,8 @@
 		<currencies.balance>/currencies balance [player] [acronym]</currencies.balance>
 		<currencies.pay>/currencies pay &lt;player&gt; &lt;acronym&gt; &lt;amount&gt;</currencies.pay>
 		<currencies.bill>/currencies bill &lt;player&gt; &lt;acronym&gt; &lt;amount&gt;</currencies.bill>
-		<currencies.paybill>/currencies paybill &lt;transaction&gt;</currencies.paybill>
+		<currencies.paybill>/currencies paybill [transaction]</currencies.paybill>
+		<currencies.rejectbill>/currencies rejectbill [transaction]</currencies.rejectbill>
 		<currencies.transactions>/currencies transactions [player] [page]</currencies.transactions>
 		<currencies.credit>/currencies credit &lt;player&gt; &lt;acronym&gt; &lt;amount&gt;</currencies.credit>
 		<currencies.debit>/currencies debit &lt;player&gt; &lt;acronym&gt; &lt;amount&gt;</currencies.debit>
