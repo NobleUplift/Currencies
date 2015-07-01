@@ -344,6 +344,14 @@ public final class CurrenciesCore {
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long payAmount = parseCurrency(currency, amount);
 		
+		if (fromAccount.getId() >= 1 && fromAccount.getId() <= 4) {
+			throw new CurrenciesException("Reserved accounts cannot pay.");
+		}
+		
+		if (toAccount.getId() >= 1 && toAccount.getId() <= 4) {
+			throw new CurrenciesException("Cannot pay a reserved account.");
+		}
+		
 		Transaction t = transferAmount(fromAccount, toAccount, currency, payAmount);
 		Currencies.getInstance().getDatabase().save(t);
 		return t;
@@ -356,6 +364,14 @@ public final class CurrenciesCore {
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		Unit base = getBaseUnit(currency);
 		long billAmount = parseCurrency(currency, amount);
+		
+		if (fromAccount.getId() >= 1 && fromAccount.getId() <= 4) {
+			throw new CurrenciesException("Reserved accounts cannot bill.");
+		}
+		
+		if (toAccount.getId() >= 1 && toAccount.getId() <= 4) {
+			throw new CurrenciesException("Cannot bill a reserved account.");
+		}
 		
 		Transaction t = new Transaction();
 		t.setSender(fromAccount);
@@ -385,19 +401,25 @@ public final class CurrenciesCore {
 			List<Transaction> transactions = Currencies.getInstance().getDatabase().find(Transaction.class)
 				.where()
 				.eq("sender", account)
-				.eq("paid", false)
+				.eq("paid", null)
 				.findList();
 			
-			if (transactions.size() != 0) {
-				throw new CurrenciesException("You have more than one bill pending! Please ");
+			if (transactions.size() > 1) {
+				throw new CurrenciesException("You have more than one bill pending. Please specify the transaction ID. You can find it by running /transactions.");
+			} else if (transactions.size() == 0) {
+				throw new CurrenciesException("You have no bills pending. ");
+			} else {
+				t = transactions.get(0);
 			}
-			
-			t = transactions.get(0);
 		} else {
 			t = Currencies.getInstance().getDatabase().find(Transaction.class)
 				.where()
 				.eq("id", transaction)
 				.findUnique();
+			
+			if (t == null) {
+				throw new CurrenciesException("Transaction " + transaction + " does not exist.");
+			}
 		}
 		
 		transferAmount(t.getSender(), t.getRecipient(), t.getUnit().getCurrency(), t.getTransactionAmount());
@@ -421,7 +443,7 @@ public final class CurrenciesCore {
 			.disjunction()
 			.eq("sender", account)
 			.eq("recipient", account)
-			.orderBy("dateCreated DESC")
+			//.orderBy("dateCreated DESC")
 			.setFirstRow((page - 1) * 10)
 			.setMaxRows(10)
 			.findList();
@@ -429,12 +451,16 @@ public final class CurrenciesCore {
 	
 	@Transactional
 	public static Transaction credit(String player, String acronym, String amount) throws CurrenciesException {
-		Account centralBank = getCentralBank();
+		Account banker = getBanker();
 		Account account = getAccountFromPlayer(player, true);
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long addAmount = parseCurrency(currency, amount);
 		
-		Transaction t = transferAmount(centralBank, account, currency, addAmount);
+		if (account.getId() >= 1 && account.getId() <= 4) {
+			throw new CurrenciesException("Cannot credit a reserved account.");
+		}
+		
+		Transaction t = transferAmount(banker, account, currency, addAmount);
 		Currencies.getInstance().getDatabase().save(t);
 		return t;
 	}
@@ -442,11 +468,15 @@ public final class CurrenciesCore {
 	@Transactional
 	public static Transaction debit(String player, String acronym, String amount) throws CurrenciesException {
 		Account account = getAccountFromPlayer(player, true);
-		Account centralBank = getCentralBank();
+		Account banker = getBanker();
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long removeAmount = parseCurrency(currency, amount);
 		
-		Transaction t = transferAmount(account, centralBank, currency, removeAmount);
+		if (account.getId() >= 1 && account.getId() <= 4) {
+			throw new CurrenciesException("Cannot debit a reserved account.");
+		}
+		
+		Transaction t = transferAmount(account, banker, currency, removeAmount);
 		Currencies.getInstance().getDatabase().save(t);
 		return t;
 	}
