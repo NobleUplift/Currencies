@@ -7,6 +7,7 @@ import org.bukkit.command.CommandSender;
 
 import com.nobleuplift.currencies.entities.Currency;
 import com.nobleuplift.currencies.entities.Transaction;
+import com.nobleuplift.currencies.entities.Unit;
 
 /**
  * Created on 2015 May 2nd at 04:10:01 PM.
@@ -149,7 +150,13 @@ public final class CurrenciesCommand {
 						Currencies.tell(sender, "--------------------");
 						Currencies.tell(sender, "Currencies " + (((page - 1) * 10) + 1) + " through " + (((page - 1) * 10) + 10) + ":");
 						for (Currency currency : currencies) {
-							Currencies.tell(sender, currency.getId() + ". " + currency.getName() + " (" + currency.getAcronym() + ")");
+							Currencies.tell(sender, "(" + currency.getAcronym() + ") " + /*currency.getId() + ". " + */currency.getName());
+							Map<Short, Unit> units = CurrenciesCore.getUnits(currency);
+							for (Map.Entry<Short, Unit> entry : units.entrySet()) {
+								Unit u = entry.getValue();
+								Currencies.tell(sender, "  " + "(" + u.getSymbol() + ") " + u.getName() + "/" + u.getAlternate() + 
+									(u.getChildUnit() != null ? " - Equal to " + u.getChildMultiples() + " " + u.getChildUnit().getAlternate() : ""));
+							}
 						}
 						Currencies.tell(sender, "--------------------");
 					} catch (CurrenciesException e) {

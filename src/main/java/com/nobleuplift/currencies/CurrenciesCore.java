@@ -92,10 +92,10 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
-		Unit symbolUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("symbol", symbol).findUnique();
-		if (symbolUnit != null) {
-			throw new CurrenciesException(symbol + " is already the prime unit of another currency.");
-		}
+		//Unit symbolUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("symbol", symbol).findUnique();
+		//if (symbolUnit != null) {
+		//	throw new CurrenciesException(symbol + " is already the prime unit of another currency.");
+		//}
 		
 		Unit u = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
 		if (u != null) {
@@ -344,6 +344,10 @@ public final class CurrenciesCore {
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long payAmount = parseCurrency(currency, amount);
 		
+		if (fromAccount.getId() == toAccount.getId()) {
+			throw new CurrenciesException("You cannot pay yourself.");
+		}
+		
 		if (fromAccount.getId() >= 1 && fromAccount.getId() <= 4) {
 			throw new CurrenciesException("Reserved accounts cannot pay.");
 		}
@@ -364,6 +368,10 @@ public final class CurrenciesCore {
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		Unit base = getBaseUnit(currency);
 		long billAmount = parseCurrency(currency, amount);
+		
+		if (fromAccount.getId() == toAccount.getId()) {
+			throw new CurrenciesException("You cannot bill yourself.");
+		}
 		
 		if (fromAccount.getId() >= 1 && fromAccount.getId() <= 4) {
 			throw new CurrenciesException("Reserved accounts cannot bill.");
@@ -394,9 +402,9 @@ public final class CurrenciesCore {
 	
 	@Transactional
 	public static Transaction paybill(String from, String transaction) throws CurrenciesException {
+		Account account = getAccountFromPlayer(from, true);
 		Transaction t = null;
 		if (transaction == null) {
-			Account account = getAccountFromPlayer(from, true);
 			
 			List<Transaction> transactions = Currencies.getInstance().getDatabase().find(Transaction.class)
 				.where()
@@ -419,6 +427,10 @@ public final class CurrenciesCore {
 			
 			if (t == null) {
 				throw new CurrenciesException("Transaction " + transaction + " does not exist.");
+			}
+			
+			if (account.getId() != t.getRecipient().getId()) {
+				throw new CurrenciesException("You can only pay bills for which you are the recipient.");
 			}
 		}
 		
@@ -594,6 +606,21 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Currency " + currency.getAcronym() + " has no base.");
 		}
 		return base;
+	}
+	
+	public static Map<Short, Unit> getUnits(Currency currency) {
+		List<Unit> units = Currencies.getInstance().getDatabase().find(Unit.class)
+			.where()
+			.eq("currency", currency)
+			.orderBy("prime DESC")
+			.orderBy("main DESC")
+			.orderBy("baseMultiples DESC")
+			.findList();
+		Map<Short, Unit> retval = new HashMap<>();
+		for (Unit u : units) {
+			retval.put(u.getId(), u);
+		}
+		return retval;
 	}
 	
 	/*
