@@ -81,6 +81,7 @@ public class Currencies extends JavaPlugin implements Listener {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		String command = cmd.getName().toLowerCase();
+		args = parseQuotes(args);
 		if (Currencies.DEBUG) {
 			System.out.println("PARSED ARGS: " + Arrays.toString(args));
 		}

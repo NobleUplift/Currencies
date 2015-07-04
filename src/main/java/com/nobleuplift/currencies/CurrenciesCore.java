@@ -942,10 +942,13 @@ public final class CurrenciesCore {
 	}
 	
 	public static long parseCurrency(Currency currency, String amount) throws CurrenciesException {
-		boolean isPositive = true;
-		if (amount.matches("(^-*).*")) {
-			isPositive = false;
-			amount = amount.replaceAll("(^-*)", "");
+		boolean isNegative = false;
+		if (amount.matches("(^-).*")) {
+			isNegative = true;
+			amount = amount.replaceAll("(^-)", "");
+			if (Currencies.DEBUG) {
+				Currencies.getInstance().getLogger().info("PARSED CURRENCY WILL BE NEGATIVE: " + amount);
+			}
 		}
 		
 		// http://stackoverflow.com/questions/2206378/how-to-split-a-string-but-also-keep-the-delimiters
@@ -1006,7 +1009,7 @@ public final class CurrenciesCore {
 			Currencies.getInstance().getLogger().info("PARSE CURRENCY - FINAL AMOUNT: " + baseAmount);
 		}
 		
-		return isPositive ? baseAmount : baseAmount * -1;
+		return isNegative ? baseAmount * -1 : baseAmount;
 	}
 	
 	public static Currency getCurrencyFromAmount(Account account, String amount) throws CurrenciesException {
