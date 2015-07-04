@@ -121,24 +121,24 @@ public class Currencies extends JavaPlugin implements Listener {
 		String singleQuoteBuffer = "";
 		
 		for (int i = 0; i < args.length; i++ ) {
-			if (args[i].matches("^\".*\"$")) {
+			if (args[i].matches("^\".*\"$") && !doubleQuoteOpen && !singleQuoteOpen) {
 				retval.add(args[i].replaceAll("(^\"*)|(\"*$)", ""));
-			} else if (args[i].matches("^'.*'$")) {
+			} else if (args[i].matches("^'.*'$") && !singleQuoteOpen && !doubleQuoteOpen) {
 				retval.add(args[i].replaceAll("(^'*)|('*$)", ""));
 			} else if (args[i].matches("^\".*") && !singleQuoteOpen) {
 				doubleQuoteOpen = true;
-				doubleQuoteBuffer = args[i].replace("(^\"*)", "");
+				doubleQuoteBuffer = args[i].replaceAll("(^\"*)", "");
 			} else if (args[i].matches("^\'.*") && !doubleQuoteOpen) {
 				singleQuoteOpen = true;
-				singleQuoteBuffer = args[i].replace("(^'*)", "");
+				singleQuoteBuffer = args[i].replaceAll("(^'*)", "");
 			} else if (args[i].matches(".*\"$") && doubleQuoteOpen) {
-				doubleQuoteBuffer += args[i].replace("(\"*$)", "");
+				doubleQuoteBuffer += " " + args[i].replaceAll("(\"*$)", "");
 				retval.add(doubleQuoteBuffer);
 				
 				doubleQuoteOpen = false;
 				doubleQuoteBuffer = "";
 			} else if (args[i].matches(".*'$") && singleQuoteOpen) {
-				singleQuoteBuffer += args[i].replace("('*$)", "");
+				singleQuoteBuffer += " " + args[i].replaceAll("('*$)", "");
 				retval.add(singleQuoteBuffer);
 				
 				singleQuoteOpen = false;
@@ -152,7 +152,7 @@ public class Currencies extends JavaPlugin implements Listener {
 			}
 		}
 		
-		return (String[]) retval.toArray();
+		return (String[]) retval.toArray(new String[retval.size()]);
 	}
 	
 	public static String[] arrayPrepend(String[] args, String prepend) {
