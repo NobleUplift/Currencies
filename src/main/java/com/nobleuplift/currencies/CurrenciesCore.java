@@ -83,7 +83,8 @@ public final class CurrenciesCore {
 		c.setDeleted(false);
 		Currencies.getInstance().getDatabase().save(c);
 	}
-	
+
+	@Transactional
 	public static void deleteCurrency(String acronym) throws CurrenciesException {
 		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
@@ -373,12 +374,8 @@ public final class CurrenciesCore {
 			.findList();
 		
 	}
-	
+
 	@Transactional
-	public static Account openAccount(String name) throws CurrenciesException {
-		return openAccount(name, null);
-	}
-	
 	public static Account openAccount(String name, String owner) throws CurrenciesException {
 		if (name.length() <= 16) {
 			throw new CurrenciesException("Non-player accounts must be longer than 16 characters.");
@@ -401,23 +398,28 @@ public final class CurrenciesCore {
 		account.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(account);
 		
-		if (owner != null) {
-			Account ownerAccount = Currencies.getInstance().getDatabase().find(Account.class)
-				.where()
-				.eq("nane", owner)
-				.findUnique();
-			
-			if (ownerAccount == null) {
-				throw new CurrenciesException("Owner " + owner + " does not exist.");
-			}
-			
-			Holder h = new Holder();
-			HolderPK hpk = new HolderPK();
-			hpk.setParentAccountId(ownerAccount.getId());
-			hpk.setChildAccountId(account.getId());
-			h.setLength((short) 1);
-			Currencies.getInstance().getDatabase().save(h);
+		Account ownerAccount = Currencies.getInstance().getDatabase().find(Account.class)
+			.where()
+			.eq("name", owner)
+			.findUnique();
+		
+		if (ownerAccount == null) {
+			throw new CurrenciesException("Owner " + owner + " does not exist.");
 		}
+		
+		Holder root = new Holder();
+		HolderPK rpk = new HolderPK();
+		rpk.setParentAccountId(account.getId());
+		rpk.setChildAccountId(account.getId());
+		root.setLength((short) 0);
+		Currencies.getInstance().getDatabase().save(root);
+		
+		Holder h = new Holder();
+		HolderPK hpk = new HolderPK();
+		hpk.setParentAccountId(ownerAccount.getId());
+		hpk.setChildAccountId(account.getId());
+		h.setLength((short) 1);
+		Currencies.getInstance().getDatabase().save(h);
 		
 		return account;
 	}

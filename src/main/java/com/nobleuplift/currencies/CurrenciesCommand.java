@@ -178,14 +178,7 @@ public final class CurrenciesCommand {
 				break;
 				
 			case "openaccount":
-				if (args.length == 2) {
-					try {
-						CurrenciesCore.openAccount(args[1]);
-						Currencies.tell(sender, "Created new account " + args[1] + ".");
-					} catch (CurrenciesException e) {
-						Currencies.tell(sender, e.getMessage());
-					}
-				} else if (args.length == 3) {
+				if (args.length == 3) {
 					try {
 						CurrenciesCore.openAccount(args[1], args[2]);
 						Currencies.tell(sender, "Created new account " + args[1] + " owned by " + args[2] + ".");
@@ -273,7 +266,7 @@ public final class CurrenciesCommand {
 						Account account = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
 						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
 						CurrenciesCore.bill(sender.getName(), args[1], currency.getAcronym(), args[2]);
-						Currencies.tell(sender, "Sent " + args[1] + "a bill for " + args[2] + ".");
+						Currencies.tell(sender, "Sent " + args[1] + " a bill for " + args[2] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
