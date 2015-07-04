@@ -358,6 +358,8 @@ public final class CurrenciesCore {
 	public static List<Currency> list(int page) throws CurrenciesException {
 		return Currencies.getInstance().getDatabase()
 			.find(Currency.class)
+			.where()
+			.eq("deleted", false)
 			.setFirstRow((page - 1) * 10)
 			.setMaxRows(10)
 			.findList();

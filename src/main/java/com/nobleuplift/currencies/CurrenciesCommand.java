@@ -59,7 +59,7 @@ public final class CurrenciesCommand {
 				if (args.length == 3) {
 					try {
 						CurrenciesCore.createCurrency(args[1], args[2]);
-						Currencies.tell(sender, "Currency " + args[2] + " created.");
+						Currencies.tell(sender, "Currency " + args[2] + " (" + args[1] + ") created.");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -67,6 +67,7 @@ public final class CurrenciesCommand {
 					boolean prefix = ("false".equals(args[3]) ? false : true);
 					try {
 						CurrenciesCore.createCurrency(args[1], args[2], prefix);
+						Currencies.tell(sender, "Currency " + args[2] + " (" + args[1] + ") created " + (prefix ? "with prefix" : "without prefix") + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -92,7 +93,7 @@ public final class CurrenciesCommand {
 				if (args.length == 5) {
 					try {
 						CurrenciesCore.addPrime(args[1], args[2], args[3], args[4]);
-						Currencies.tell(sender, "Unit " + args[2] + " created.");
+						Currencies.tell(sender, "Unit " + args[2] + "/" + args[3] + " (" + args[4] + ") in " + args[1] + " created.");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -105,7 +106,8 @@ public final class CurrenciesCommand {
 				if (args.length == 7) {
 					try {
 						CurrenciesCore.addParent(args[1], args[2], args[3], args[4], Integer.parseInt(args[5]), args[6]);
-						Currencies.tell(sender, "Unit " + args[2] + " created.");
+						Currencies.tell(sender, "Parent unit " + args[2] + "/" + args[3] + " (" + args[4] + ") in " + args[1] + " created. " + 
+							"1 " + args[4] + " equals " + Integer.parseInt(args[5]) + " " + args[6] + ".");
 					} catch (NumberFormatException e) {
 						Currencies.tell(sender, "Multiplier must be an integer.");
 					} catch (CurrenciesException e) {
@@ -120,7 +122,8 @@ public final class CurrenciesCommand {
 				if (args.length == 7) {
 					try {
 						CurrenciesCore.addChild(args[1], args[2], args[3], args[4], Integer.parseInt(args[5]), args[6]);
-						Currencies.tell(sender, "Unit " + args[2] + " created.");
+						Currencies.tell(sender, "Child unit " + args[2] + "/" + args[3] + " (" + args[4] + ") in " + args[1] + " created. " + 
+							Integer.parseInt(args[5]) + " " + args[4] + " equals 1 " + args[6] + ".");
 					} catch (NumberFormatException e) {
 						Currencies.tell(sender, "Divisor must be an integer.");
 					} catch (CurrenciesException e) {
