@@ -2,6 +2,7 @@ package com.nobleuplift.currencies;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
@@ -80,6 +81,9 @@ public class Currencies extends JavaPlugin implements Listener {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		String command = cmd.getName().toLowerCase();
+		System.out.println("ARGS BEFORE PARSING: " + Arrays.toString(args));
+		args = parseQuotes(args);
+		System.out.println("ARGS AFTER PARSING: " + Arrays.toString(args));
 		
 		switch (command) {
 			case "currencies":
@@ -108,7 +112,50 @@ public class Currencies extends JavaPlugin implements Listener {
 		}
 	}
 	
-	private String[] arrayPrepend(String[] args, String prepend) {
+	public static String[] parseQuotes(String[] args) {
+		List<String> retval = new ArrayList<>();
+		
+		boolean doubleQuoteOpen = false;
+		boolean singleQuoteOpen = false;
+		String doubleQuoteBuffer = "";
+		String singleQuoteBuffer = "";
+		
+		for (int i = 0; i < args.length; i++ ) {
+			if (args[i].matches("^\".*\"$")) {
+				retval.add(args[i].replaceAll("(^\"*)|(\"*$)", ""));
+			} else if (args[i].matches("^'.*'$")) {
+				retval.add(args[i].replaceAll("(^'*)|('*$)", ""));
+			} else if (args[i].matches("^\".*") && !singleQuoteOpen) {
+				doubleQuoteOpen = true;
+				doubleQuoteBuffer = args[i].replace("(^\"*)", "");
+			} else if (args[i].matches("^\'.*") && !doubleQuoteOpen) {
+				singleQuoteOpen = true;
+				singleQuoteBuffer = args[i].replace("(^'*)", "");
+			} else if (args[i].matches(".*\"$") && doubleQuoteOpen) {
+				doubleQuoteBuffer += args[i].replace("(\"*$)", "");
+				retval.add(doubleQuoteBuffer);
+				
+				doubleQuoteOpen = false;
+				doubleQuoteBuffer = "";
+			} else if (args[i].matches(".*'$") && singleQuoteOpen) {
+				singleQuoteBuffer += args[i].replace("('*$)", "");
+				retval.add(singleQuoteBuffer);
+				
+				singleQuoteOpen = false;
+				singleQuoteBuffer = "";
+			} else if (doubleQuoteOpen) {
+				doubleQuoteBuffer += " " + args[i];
+			} else if (singleQuoteOpen) {
+				singleQuoteBuffer += " " + args[i];
+			} else {
+				retval.add(args[i]);
+			}
+		}
+		
+		return (String[]) retval.toArray();
+	}
+	
+	public static String[] arrayPrepend(String[] args, String prepend) {
 		String[] retval = new String[args.length + 1];
 		
 		retval[0] = prepend;

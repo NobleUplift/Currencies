@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.bukkit.command.CommandSender;
 
+import com.nobleuplift.currencies.entities.Account;
 import com.nobleuplift.currencies.entities.Currency;
 import com.nobleuplift.currencies.entities.Transaction;
 import com.nobleuplift.currencies.entities.Unit;
@@ -103,7 +104,7 @@ public final class CurrenciesCommand {
 			case "addparent":
 				if (args.length == 7) {
 					try {
-						CurrenciesCore.addParent(args[1], args[2], args[3], args[4], args[5], Integer.parseInt(args[6]));
+						CurrenciesCore.addParent(args[1], args[2], args[3], args[4], Integer.parseInt(args[5]), args[6]);
 						Currencies.tell(sender, "Unit " + args[2] + " created.");
 					} catch (NumberFormatException e) {
 						Currencies.tell(sender, "Multiplier must be an integer.");
@@ -118,7 +119,7 @@ public final class CurrenciesCommand {
 			case "addchild":
 				if (args.length == 7) {
 					try {
-						CurrenciesCore.addChild(args[1], args[2], args[3], args[4], args[5], Integer.parseInt(args[6]));
+						CurrenciesCore.addChild(args[1], args[2], args[3], args[4], Integer.parseInt(args[5]), args[6]);
 						Currencies.tell(sender, "Unit " + args[2] + " created.");
 					} catch (NumberFormatException e) {
 						Currencies.tell(sender, "Divisor must be an integer.");
@@ -236,10 +237,12 @@ public final class CurrenciesCommand {
 				break;
 			
 			case "pay":
-				if (args.length == 4) {
+				if (args.length == 3) {
 					try {
-						CurrenciesCore.pay(sender.getName(), args[1], args[2], args[3]);
-						Currencies.tell(sender, "Paid " + args[1] + " " + args[3] + " " + args[2] + ".");
+						Account account = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
+						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
+						CurrenciesCore.pay(sender.getName(), args[1], currency.getAcronym(), args[2]);
+						Currencies.tell(sender, "Paid " + args[1] + " " + args[2] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -249,10 +252,12 @@ public final class CurrenciesCommand {
 				break;
 			
 			case "bill":
-				if (args.length == 4) {
+				if (args.length == 3) {
 					try {
-						CurrenciesCore.bill(sender.getName(), args[1], args[2], args[3]);
-						Currencies.tell(sender, "Sent " + args[1] + "a bill for " + args[3] + " " + args[2] + ".");
+						Account account = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
+						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
+						CurrenciesCore.bill(sender.getName(), args[1], currency.getAcronym(), args[2]);
+						Currencies.tell(sender, "Sent " + args[1] + "a bill for " + args[2] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -323,10 +328,12 @@ public final class CurrenciesCommand {
 				break;
 				
 			case "credit":
-				if (args.length == 4) {
+				if (args.length == 3) {
 					try {
-						CurrenciesCore.credit(args[1], args[2], args[3]);
-						Currencies.tell(sender, "You have credited " + args[3] + " " + args[2] + " to " + args[1] + ".");
+						Account account = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
+						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
+						CurrenciesCore.credit(args[1], currency.getAcronym(), args[2]);
+						Currencies.tell(sender, "You have credited " + args[2] + " to " + args[1] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -336,10 +343,12 @@ public final class CurrenciesCommand {
 				break;
 			
 			case "debit":
-				if (args.length == 4) {
+				if (args.length == 3) {
 					try {
-						CurrenciesCore.debit(args[1], args[2], args[3]);
-						Currencies.tell(sender, "You have debited " + args[3] + " " + args[2] + " from " + args[1] + ".");
+						Account account = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
+						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
+						CurrenciesCore.debit(args[1], currency.getAcronym(), args[2]);
+						Currencies.tell(sender, "You have debited " + args[2] + " from " + args[1] + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
@@ -351,6 +360,10 @@ public final class CurrenciesCommand {
 			case "bankrupt":
 				if (args.length == 2) {
 					try {
+						if (!sender.hasPermission("currencies.bankrupt.all")) {
+							throw new CurrenciesException("You must have the permission currencies.bankrupt.all to bankrupt an account on all currencies.");
+						}
+						
 						CurrenciesCore.bankrupt(args[1]);
 						Currencies.tell(sender, "Account " + args[1] + " has bankrupted on all currencies.");
 					} catch (CurrenciesException e) {
@@ -365,6 +378,10 @@ public final class CurrenciesCommand {
 					}
 				} else if (args.length == 4) {
 					try {
+						if (!sender.hasPermission("currencies.credit")) {
+							throw new CurrenciesException("You must have the permission currencies.credit to give a bankrupted account a starting balance.");
+						}
+						
 						CurrenciesCore.bankrupt(args[1], args[2], args[3]);
 						Currencies.tell(sender, "Account " + args[1] + " has bankrupted on currency " + args[2] + " but has been given a starting balance of " + args[3] + ".");
 					} catch (CurrenciesException e) {
@@ -377,7 +394,6 @@ public final class CurrenciesCommand {
 			
 			default:
 				Currencies.tell(sender, "Invalid subcommand: " + args[0]);
-				//help(sender);
 		}
 	}
 }

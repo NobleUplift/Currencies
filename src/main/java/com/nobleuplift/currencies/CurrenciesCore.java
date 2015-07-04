@@ -33,12 +33,14 @@ import com.nobleuplift.currencies.entities.Unit;
  * </li>
  * <li>Each unit can only have one child unit, but can have
  * infinite parent units.</li>
- * <li>Two parent units cannot have the same multiplier.</li>
+ * <li>Two parent units of the same child cannot have the same multiplier.</li>
  * <li>Currencies can have the same prime symbol, but if two currencies
  * with the same prime symbol exist on the server, then users will have
  * to use /currencies setdefault to set a default between these two
  * currencies.</li>
  * <li>A currency cannot have two units with the same symbol.</li>
+ * <li>Currencies cannot have children or parent units with
+ * the same symbols as prime symbols of other currencies.</li>
  * </ul>
  * 
  * Created on 2015 May 2nd at 07:20:47 PM.
@@ -126,20 +128,54 @@ public final class CurrenciesCore {
 	}
 
 	@Transactional
-	public static void addParent(String acronym, String name, String plural, String symbol, String child, int multiplier) throws CurrenciesException {
+	public static void addParent(String acronym, String name, String plural, String symbol, int multiplier, String child) throws CurrenciesException {
+		// Get the currency
 		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
+		// Ensure the currency already has a prime unit
 		Unit prime = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
 		if (prime == null) {
 			throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
 		}
 		
-		Unit childUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("name", child).findUnique();
-		if (childUnit == null) {
-			throw new CurrenciesException("Child unit " + child + " does not exist for currency " + acronym + ".");
+		// Validate the singular name
+		Unit singularUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
+			.eq("currency", c)
+			.eq("name", name)
+			.findUnique();
+		if (singularUnit != null) {
+			throw new CurrenciesException("Unit with name " + name + " already exists for this currency.");
+		}
+		
+		// Validate the plural name
+		Unit pluralUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
+			.eq("currency", c)
+			.eq("alternate", plural)
+			.findUnique();
+		if (pluralUnit != null) {
+			throw new CurrenciesException("Unit with plural name " + plural + " already exists for this currency.");
+		}
+		
+		/*
+		 * Validate the symbol
+		 */
+		Unit symbolUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
+			.eq("currency", c)
+			.eq("symbol", symbol)
+			.findUnique();
+		if (symbolUnit != null) {
+			throw new CurrenciesException("Unit with symbol " + symbol + " already exists for currency " + acronym + ".");
+		}
+
+		Unit primeUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
+			.eq("symbol", symbol)
+			.eq("prime", true)
+			.findUnique();
+		if (primeUnit != null) {
+			throw new CurrenciesException("Unit with symbol " + symbol + " is a prime unit for another currency.");
 		}
 		
 		if (symbol.length() > 2) {
@@ -150,62 +186,106 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Symbol cannot contain numbers.");
 		}
 		
-		//List<Unit> otherPrimes = Currencies.getInstance().getDatabase().find(Unit.class).where()
-		//	.eq("symbol", symbol).eq("prime", true).findList();
-		//if (!otherPrimes.isEmpty()) {
-		//	throw new CurrenciesException(symbol + " is a prime unit for another currency.");
-		//}
+		// Validate the child
+		Unit childUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("symbol", child).findUnique();
+		if (childUnit == null) {
+			throw new CurrenciesException("Child unit " + child + " does not exist for currency " + acronym + ".");
+		}
 		
+		// Validate the multiplier
 		if (multiplier <= 1) {
 			throw new CurrenciesException("Multiplier must be greater than one.");
 		}
 		
-		Unit u = Currencies.getInstance().getDatabase().find(Unit.class).where()
-			.eq("currency_id", c.getId())
-			.eq("symbol", symbol)
-			.eq("name", name)
+		Unit multiplierUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
+			.eq("currency", c)
+			.eq("childUnit", childUnit)
+			.eq("base_multiples", multiplier)
 			.findUnique();
-		
-		// TODO: Find out how to validate this later
-		/*Unit singularUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
-			.eq("currency_id", c.getId())
-			.eq("singular", singular)
-			.findUnique();*/
-		
-		if (u != null) {
-			throw new CurrenciesException("Unit " + name + " (" + symbol + ") already exists for currency " + acronym + ".");
+		if (multiplierUnit != null) {
+			throw new CurrenciesException("A parent of " + child + " with multiplier " + multiplier + " already exists.");
 		}
 		
 		int multiples = childUnit.getBaseMultiples() != 0 ? multiplier * childUnit.getBaseMultiples() : multiplier;
 		
-		u = new Unit();
-		u.setCurrency(c);
-		u.setChildUnit(childUnit);
-		u.setName(name);
-		u.setAlternate(plural);
-		u.setSymbol(symbol);
-		u.setPrime(false);
+		Unit parentUnit = new Unit();
+		parentUnit.setCurrency(c);
+		parentUnit.setChildUnit(childUnit);
+		parentUnit.setName(name);
+		parentUnit.setAlternate(plural);
+		parentUnit.setSymbol(symbol);
+		parentUnit.setPrime(false);
 		//u.setBase(false);
-		u.setChildMultiples(multiplier);
-		u.setBaseMultiples(multiples);
-		u.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
-		u.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
-		Currencies.getInstance().getDatabase().save(u);
+		parentUnit.setChildMultiples(multiplier);
+		parentUnit.setBaseMultiples(multiples);
+		parentUnit.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+		parentUnit.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
+		Currencies.getInstance().getDatabase().save(parentUnit);
 	}
 
 	@Transactional
-	public static void addChild(String acronym, String name, String plural, String symbol, String parent, int divisor) throws CurrenciesException {
+	public static void addChild(String acronym, String name, String plural, String symbol, int divisor, String parent) throws CurrenciesException {
+		// Get the currency
 		Currency c = Currencies.getInstance().getDatabase().find(Currency.class).where().eq("acronym", acronym).findUnique();
 		if (c == null) {
 			throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
 		}
 		
+		// Ensure the currency already has a prime unit
 		Unit prime = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("prime", true).findUnique();
 		if (prime == null) {
 			throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
 		}
 		
-		Unit parentUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("name", parent).findUnique();
+		// Validate the singular name
+		Unit singularUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
+			.eq("currency", c)
+			.eq("name", name)
+			.findUnique();
+		if (singularUnit != null) {
+			throw new CurrenciesException("Unit with name " + name + " already exists for this currency.");
+		}
+		
+		// Validate the plural name
+		Unit pluralUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
+			.eq("currency", c)
+			.eq("alternate", plural)
+			.findUnique();
+		if (pluralUnit != null) {
+			throw new CurrenciesException("Unit with plural name " + plural + " already exists for this currency.");
+		}
+		
+		/*
+		 * Validate the symbol
+		 */
+		Unit symbolUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
+			.eq("currency", c)
+			.eq("symbol", symbol)
+			.findUnique();
+		if (symbolUnit != null) {
+			throw new CurrenciesException("Unit with symbol " + symbol + " already exists for currency " + acronym + ".");
+		}
+
+		Unit primeUnit = Currencies.getInstance().getDatabase().find(Unit.class).where()
+			.eq("symbol", symbol)
+			.eq("prime", true)
+			.findUnique();
+		if (primeUnit != null) {
+			throw new CurrenciesException("Unit with symbol " + symbol + " is a prime unit for another currency.");
+		}
+		
+		if (symbol.length() > 2) {
+			throw new CurrenciesException("Symbol can be no more than two characters.");
+		}
+		
+		if (!symbol.matches("\\D+") || symbol.contains("-")) {
+			throw new CurrenciesException("Symbol cannot contain numbers or the negative symbol.");
+		}
+		
+		/*
+		 * Validate the parent unit
+		 */
+		Unit parentUnit = Currencies.getInstance().getDatabase().find(Unit.class).where().eq("currency_id", c.getId()).eq("symbol", parent).findUnique();
 		if (parentUnit == null) {
 			throw new CurrenciesException("Unit " + parent + " does not exist.");
 		}
@@ -214,30 +294,30 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Unit " + parent + " already has a child. Units can only have one child.");
 		}
 		
-		if (symbol.length() > 2) {
-			throw new CurrenciesException("Symbol can be no more than two characters.");
-		}
-		
-		if (!symbol.matches("\\D+")) {
-			throw new CurrenciesException("Symbol cannot contain numbers.");
-		}
-		
-		//List<Unit> otherPrimes = Currencies.getInstance().getDatabase().find(Unit.class).where()
-		//	.eq("symbol", symbol).eq("prime", true).findList();
-		//if (!otherPrimes.isEmpty()) {
-		//	throw new CurrenciesException(symbol + " is a prime unit for another currency.");
-		//}
-		
+		// Validate the divisor
 		if (divisor <= 1) {
 			throw new CurrenciesException("Divisor must be greater than 1.");
 		}
 		
 		List<Unit> units = c.getUnits();
 		for (Unit u : units) {
+			/*
+			 * Parent unit's multiples must be set
+			 * separately at the end of this method.
+			 */
 			if (u.getId() == parentUnit.getId()) {
 				continue;
 			}
 			
+			/*
+			 * If the base multiples are zero, it is the former
+			 * base unit. Simply set the new divisor.
+			 * 
+			 * If the base multiples are not zero, it is a parent
+			 * of the former base unit and each of the prior
+			 * base multiples must be multiplied to equal
+			 * the new base unit.
+			 */
 			if (u.getBaseMultiples() == 0) {
 				u.setBaseMultiples(divisor);
 			} else {
@@ -260,6 +340,10 @@ public final class CurrenciesCore {
 		childUnit.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(childUnit);
 		
+		/*
+		 * Since the parent is no longer the base unit, set its multiples
+		 * to match the new child and link it to the child unit.
+		 */
 		parentUnit.setChildUnit(childUnit);
 		parentUnit.setChildMultiples(divisor);
 		parentUnit.setBaseMultiples(divisor);
@@ -739,46 +823,6 @@ public final class CurrenciesCore {
 		return currency;
 	}
 	
-	public static Currency getCurrencyFromAmount(Account account, String currency) throws CurrenciesException {
-		String[] parts = currency.split("((?<=\\D)|(?=\\D))");
-		
-		if (parts.length == 0 || parts.length == 1) {
-			throw new CurrenciesException("Either no symbol or no currency amount was provided.");
-		}
-		
-		Currency c = null;
-		
-		for (String part : parts) {
-			List<Unit> primes = Currencies.getInstance().getDatabase().find(Unit.class)
-				.where().eq("symbol", part).eq("prime", true).findList();
-			
-			if (primes.size() == 1) {
-				if (c != null) {
-					throw new CurrenciesException("Two prime units were provided in the currency string.");
-				}
-				
-				c = primes.get(0).getCurrency();
-			} else if (primes.size() > 1) {
-				if (account.getDefaultCurrency() == null) {
-					throw new CurrenciesException("This currency shares a prime unit with other currencies. You must run /currencies setdefault <currency>.");
-				}
-				
-				for (Unit p : primes) {
-					if (p.getCurrency().equals(account.getDefaultCurrency())) {
-						c = p.getCurrency();
-						break;
-					}
-				}
-			}
-		}
-		
-		if (c == null) {
-			throw new CurrenciesException("No prime unit was located in your currency string.");
-		}
-		
-		return c;
-	}
-	
 	public static long parseCurrency(Currency currency, String amount) throws CurrenciesException {
 		// http://stackoverflow.com/questions/2206378/how-to-split-a-string-but-also-keep-the-delimiters
 		String[] parts = amount.replaceAll("([0-9-]+)", "|$1|").replaceAll("(^\\|*)|(\\|*$)","").split("\\|");
@@ -839,6 +883,46 @@ public final class CurrenciesCore {
 		}
 		
 		return baseAmount;
+	}
+	
+	public static Currency getCurrencyFromAmount(Account account, String amount) throws CurrenciesException {
+		String[] parts = amount.replaceAll("([0-9-]+)", "|$1|").replaceAll("(^\\|*)|(\\|*$)","").split("\\|");
+		
+		if (parts.length == 0 || parts.length == 1) {
+			throw new CurrenciesException("Either no symbol or no currency amount was provided.");
+		}
+		
+		Currency c = null;
+		
+		for (String part : parts) {
+			List<Unit> primes = Currencies.getInstance().getDatabase().find(Unit.class)
+				.where().eq("symbol", part).eq("prime", true).findList();
+			
+			if (primes.size() == 1) {
+				if (c != null) {
+					throw new CurrenciesException("Two prime units were provided in the currency string.");
+				}
+				
+				c = primes.get(0).getCurrency();
+			} else if (primes.size() > 1) {
+				if (account.getDefaultCurrency() == null) {
+					throw new CurrenciesException("This currency shares a prime unit with other currencies. You must run /currencies setdefault <currency>.");
+				}
+				
+				for (Unit p : primes) {
+					if (p.getCurrency().equals(account.getDefaultCurrency())) {
+						c = p.getCurrency();
+						break;
+					}
+				}
+			}
+		}
+		
+		if (c == null) {
+			throw new CurrenciesException("No prime unit was located in your currency string.");
+		}
+		
+		return c;
 	}
 	
 	private static Transaction transferAmount(Account fromAccount, Account toAccount, Currency currency, long amount) throws CurrenciesException {
