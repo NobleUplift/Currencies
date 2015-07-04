@@ -912,7 +912,7 @@ public final class CurrenciesCore {
 				}
 				
 				for (Unit p : primes) {
-					if (p.getCurrency().equals(account.getDefaultCurrency())) {
+					if (p.getCurrency().getId() == account.getDefaultCurrency().getId()) {
 						c = p.getCurrency();
 						break;
 					}
