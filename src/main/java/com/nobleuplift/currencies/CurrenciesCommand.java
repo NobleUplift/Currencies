@@ -28,6 +28,7 @@ public final class CurrenciesCommand {
 	public static final String CURRENCIES_PAY = "${currencies.pay}";
 	public static final String CURRENCIES_BILL = "${currencies.bill}";
 	public static final String CURRENCIES_PAYBILL = "${currencies.paybill}";
+	public static final String CURRENCIES_REJECTBILL = "${currencies.rejectbill}";
 	public static final String CURRENCIES_TRANSACTIONS = "${currencies.transactions}";
 	public static final String CURRENCIES_CREDIT= "${currencies.credit}";
 	public static final String CURRENCIES_DEBIT = "${currencies.debit}";
@@ -39,10 +40,15 @@ public final class CurrenciesCommand {
 		Currencies.tell(sender, CURRENCIES_ADDPRIME);
 		Currencies.tell(sender, CURRENCIES_ADDPARENT);
 		Currencies.tell(sender, CURRENCIES_ADDCHILD);
+		Currencies.tell(sender, CURRENCIES_LIST);
+		Currencies.tell(sender, CURRENCIES_OPENACCOUNT);
+		Currencies.tell(sender, CURRENCIES_SETDEFAULT);
 		Currencies.tell(sender, CURRENCIES_BALANCE);
 		Currencies.tell(sender, CURRENCIES_PAY);
 		Currencies.tell(sender, CURRENCIES_BILL);
 		Currencies.tell(sender, CURRENCIES_PAYBILL);
+		Currencies.tell(sender, CURRENCIES_REJECTBILL);
+		Currencies.tell(sender, CURRENCIES_TRANSACTIONS);
 		Currencies.tell(sender, CURRENCIES_CREDIT);
 		Currencies.tell(sender, CURRENCIES_DEBIT);
 		Currencies.tell(sender, CURRENCIES_BANKRUPT);
@@ -179,6 +185,13 @@ public final class CurrenciesCommand {
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
+				} else if (args.length == 3) {
+					try {
+						CurrenciesCore.openAccount(args[1], args[2]);
+						Currencies.tell(sender, "Created new account " + args[1] + " owned by " + args[2] + ".");
+					} catch (CurrenciesException e) {
+						Currencies.tell(sender, e.getMessage());
+					}
 				} else {
 					Currencies.tell(sender, CURRENCIES_OPENACCOUNT);
 				}
@@ -272,20 +285,40 @@ public final class CurrenciesCommand {
 			case "paybill":
 				if (args.length == 1) {
 					try {
-						Transaction t = CurrenciesCore.paybill(sender.getName());
+						Transaction t = CurrenciesCore.processBill(sender.getName(), true);
 						Currencies.tell(sender, "Paid transaction " + t.getId() + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 2) {
 					try {
-						Transaction t = CurrenciesCore.paybill(sender.getName(), args[1]);
+						Transaction t = CurrenciesCore.processBill(sender.getName(), true, args[1]);
 						Currencies.tell(sender, "Paid transaction " + t.getId() + ".");
 					} catch (CurrenciesException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
 					Currencies.tell(sender, CURRENCIES_PAYBILL);
+				}
+				break;
+				
+			case "rejectbill":
+				if (args.length == 1) {
+					try {
+						Transaction t = CurrenciesCore.processBill(sender.getName(), false);
+						Currencies.tell(sender, "Rejected transaction " + t.getId() + ".");
+					} catch (CurrenciesException e) {
+						Currencies.tell(sender, e.getMessage());
+					}
+				} else if (args.length == 2) {
+					try {
+						Transaction t = CurrenciesCore.processBill(sender.getName(), false, args[1]);
+						Currencies.tell(sender, "Rejected transaction " + t.getId() + ".");
+					} catch (CurrenciesException e) {
+						Currencies.tell(sender, e.getMessage());
+					}
+				} else {
+					Currencies.tell(sender, CURRENCIES_REJECTBILL);
 				}
 				break;
 			
@@ -317,9 +350,15 @@ public final class CurrenciesCommand {
 						Currencies.tell(sender, "--------------------");
 						Currencies.tell(sender, "Transactions " + (((page - 1) * 10) + 1) + " through " + (((page - 1) * 10) + 10) + ":");
 						for (Transaction t : transactions) {
-							sender.sendMessage(t.getId() + ". From " + t.getSender().getName() + " to " + t.getRecipient().getName() + 
-								": " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + 
-								(t.getPaid() == null ? " Not Paid" : (t.getPaid() ? " Paid" : " Rejected")));
+							if (t.getSender().getId() == CurrenciesCore.MINECRAFT_CENTRAL_BANKER) {
+								sender.sendMessage(t.getId() + ". Credited " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " to " + t.getRecipient().getName());
+							} else if (t.getRecipient().getId() == CurrenciesCore.MINECRAFT_CENTRAL_BANKER) {
+								sender.sendMessage(t.getId() + ". Debited " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " from " + t.getRecipient().getName());
+							} else {
+								sender.sendMessage(t.getId() + ". " + t.getSender().getName() + (t.getPaid() == null ? " has not paid " : (t.getPaid() ? " paid " : " did not pay ")) +
+									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) +  " to " + 
+									t.getRecipient().getName());
+							}
 						}
 						Currencies.tell(sender, "--------------------");
 					} catch (CurrenciesException e) {

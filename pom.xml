@@ -4,7 +4,7 @@
 
 	<groupId>com.nobleuplift.currencies</groupId>
 	<artifactId>Currencies</artifactId>
-	<version>0.0.1-b047</version>
+	<version>0.0.1-b048</version>
 	<packaging>jar</packaging>
 
 	<name>Currencies</name>
@@ -22,7 +22,7 @@
 		<currencies.addparent>/currencies addparent &lt;acronym&gt; &lt;name&gt; &lt;plural&gt; &lt;symbol&gt; &lt;multiplier&gt; &lt;child&gt;</currencies.addparent>
 		<currencies.addchild>/currencies addchild &lt;acronym&gt; &lt;name&gt; &lt;plural&gt; &lt;symbol&gt; &lt;divisor&gt; &lt;parent&gt;</currencies.addchild>
 		<currencies.list>/currencies list [page]</currencies.list>
-		<currencies.openaccount>/currencies openaccount &lt;name&gt;</currencies.openaccount>
+		<currencies.openaccount>/currencies openaccount &lt;name&gt; [owner]</currencies.openaccount>
 		<currencies.setdefault>/currencies setdefault &lt;acronym&gt;</currencies.setdefault>
 		<currencies.balance>/currencies balance [player] [acronym]</currencies.balance>
 		<currencies.pay>/currencies pay &lt;player&gt; &lt;amount&gt;</currencies.pay>

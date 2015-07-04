@@ -47,6 +47,9 @@ commands:
     paybill:
         description: Pay a bill you received from another account.
         usage: ${currencies.paybill}
+    rejectbill:
+        description: Reject a bill you received from another account.
+        usage: ${currencies.rejectbill}
     transactions:
         description: See your transaction history.
         usage: ${currencies.transactions}

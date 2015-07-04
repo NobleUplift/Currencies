@@ -17,6 +17,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import com.nobleuplift.currencies.entities.Account;
 import com.nobleuplift.currencies.entities.Currency;
+import com.nobleuplift.currencies.entities.Holder;
+import com.nobleuplift.currencies.entities.HolderPK;
 import com.nobleuplift.currencies.entities.Holding;
 import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
@@ -26,11 +28,6 @@ public class Currencies extends JavaPlugin implements Listener {
 	public static final String PREFIX = "§a[Currencies]§r ";
 	public static final boolean DEBUG = true;
 
-	public static final int CENTRAL_BANK = 1;
-	public static final int BANKER = 2;
-	public static final int BLACK_MARKET = 3;
-	public static final int TRADER = 4;
-	
 	protected static Currencies instance;
 	
 	protected static Currencies getInstance() {
@@ -42,6 +39,8 @@ public class Currencies extends JavaPlugin implements Listener {
         List<Class<?>> list = new ArrayList<Class<?>>();
         list.add(Account.class);
         list.add(Currency.class);
+        list.add(HolderPK.class);
+        list.add(Holder.class);
         list.add(HoldingPK.class);
         list.add(Holding.class);
         list.add(Transaction.class);
@@ -65,10 +64,11 @@ public class Currencies extends JavaPlugin implements Listener {
 		Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_holder` (   `parent_account_id` INT UNSIGNED NOT NULL,   `child_account_id` INT UNSIGNED NOT NULL,   `length` SMALLINT NOT NULL DEFAULT 1,   PRIMARY KEY (`parent_account_id`, `child_account_id`),   INDEX `fk_currencies_account_has_currencies_parent_account_idx` (`parent_account_id` ASC),   INDEX `fk_currencies_account_has_currencies_child_account_idx` (`child_account_id` ASC),   CONSTRAINT `fk_currencies_account_has_currencies_parent_account`     FOREIGN KEY (`parent_account_id`)     REFERENCES `currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_account_has_currencies_child_account`     FOREIGN KEY (`child_account_id`)     REFERENCES `currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
 		Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_transaction` (   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,   `sender_id` INT UNSIGNED NOT NULL,   `recipient_id` INT UNSIGNED NOT NULL,   `unit_id` SMALLINT UNSIGNED NOT NULL,   `transaction_amount` BIGINT NOT NULL,   `final_sender_amount` BIGINT NULL DEFAULT NULL,   `final_recipient_amount` BIGINT NULL DEFAULT NULL,   `paid` TINYINT(1) UNSIGNED NULL DEFAULT '1',   `date_paid` TIMESTAMP NULL DEFAULT NULL,   `date_created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   PRIMARY KEY (`id`),   INDEX `fk_currencies_recipient_has_currencies_transaction_idx` (`recipient_id` ASC),   INDEX `fk_currencies_sender_has_currencies_transaction_idx` (`sender_id` ASC),   INDEX `fk_currencies_unit_has_currencies_transaction_idx` (`unit_id` ASC),   CONSTRAINT `fk_currencies_sender_has_currencies_transaction`     FOREIGN KEY (`sender_id`)     REFERENCES `currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_recipient_has_currencies_transaction`     FOREIGN KEY (`recipient_id`)     REFERENCES `currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_unit_has_currencies_transaction`     FOREIGN KEY (`unit_id`)     REFERENCES `currencies_unit` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
 		
-		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` (`id`, `name`, `uuid`, `default_currency_id`, `date_created`, `date_modified`) VALUES (1, 'Central_Bank', NULL, NULL, NOW(), NOW());").execute();
-		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` (`id`, `name`, `uuid`, `default_currency_id`, `date_created`, `date_modified`) VALUES (2, 'Banker', NULL, NULL, NOW(), NOW());").execute();
-		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` (`id`, `name`, `uuid`, `default_currency_id`, `date_created`, `date_modified`) VALUES (3, 'Black_Market', NULL, NULL, NOW(), NOW());").execute();
-		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` (`id`, `name`, `uuid`, `default_currency_id`, `date_created`, `date_modified`) VALUES (4, 'Trader', NULL, NULL, NOW(), NOW());").execute();
+		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` (`id`, `name`, `uuid`, `default_currency_id`, `date_created`, `date_modified`) VALUES (1, 'Minecraft Central Bank', NULL, NULL, NOW(), NOW());").execute();
+		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` (`id`, `name`, `uuid`, `default_currency_id`, `date_created`, `date_modified`) VALUES (2, 'Minecraft Central Banker', NULL, NULL, NOW(), NOW());").execute();
+		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` (`id`, `name`, `uuid`, `default_currency_id`, `date_created`, `date_modified`) VALUES (3, 'The Enderman Market', NULL, NULL, NOW(), NOW());").execute();
+		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` (`id`, `name`, `uuid`, `default_currency_id`, `date_created`, `date_modified`) VALUES (4, 'The Enderman Marketeer', NULL, NULL, NOW(), NOW());").execute();
+		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_holder` VALUES (1, 1, 0), (2, 2, 0), (3, 3, 0), (4, 4, 0);");
 		
 		System.out.print("[Currencies] Enabled.");
 	}
@@ -174,6 +174,15 @@ public class Currencies extends JavaPlugin implements Listener {
 		getLogger().info("Creating player account for " + p.getName() + " (" + p.getUniqueId().toString() + ").");
 		Account pa = Currencies.getInstance().getDatabase().find(Account.class).where().eq("uuid", p.getUniqueId().toString()).findUnique();
 		if (pa == null) {
+			Account nameAccount = Currencies.getInstance().getDatabase().find(Account.class)
+				.where()
+				.eq("name", p.getName())
+				.findUnique();
+			if (nameAccount != null) {
+				nameAccount.setName(nameAccount.getName() + "CurrenciesAccount" + nameAccount.getId());
+				Currencies.getInstance().getDatabase().save(nameAccount);
+			}
+			
 			pa = new Account();
 			pa.setName(p.getName());
 			pa.setUuid(p.getUniqueId().toString());
@@ -181,6 +190,14 @@ public class Currencies extends JavaPlugin implements Listener {
 			pa.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 			pa.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 			Currencies.getInstance().getDatabase().save(pa);
+			
+			Holder h = new Holder();
+			HolderPK hpk = new HolderPK();
+			hpk.setParentAccountId(pa.getId());
+			hpk.setChildAccountId(pa.getId());
+			h.setId(hpk);
+			h.setLength((short) 0);
+			Currencies.getInstance().getDatabase().save(h);
 		} else if (!p.getName().equals(pa.getName())) {
 			pa.setName(p.getName());
 			pa.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));

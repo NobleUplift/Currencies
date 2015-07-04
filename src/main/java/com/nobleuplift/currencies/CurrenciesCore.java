@@ -1,6 +1,7 @@
 package com.nobleuplift.currencies;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -10,6 +11,8 @@ import java.util.Map;
 import com.avaje.ebean.annotation.Transactional;
 import com.nobleuplift.currencies.entities.Account;
 import com.nobleuplift.currencies.entities.Currency;
+import com.nobleuplift.currencies.entities.Holder;
+import com.nobleuplift.currencies.entities.HolderPK;
 import com.nobleuplift.currencies.entities.Holding;
 import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
@@ -47,6 +50,11 @@ import com.nobleuplift.currencies.entities.Unit;
  * @author NobleUplift
  */
 public final class CurrenciesCore {
+	public static final int MINECRAFT_CENTRAL_BANK = 1;
+	public static final int MINECRAFT_CENTRAL_BANKER = 2;
+	public static final int THE_ENDERMAN_MARKET = 3;
+	public static final int THE_ENDERMAN_MARKETEER = 4;
+	
 	public static void createCurrency(String acronym, String name) throws CurrenciesException {
 		createCurrency(acronym, name, true);
 	}
@@ -368,13 +376,48 @@ public final class CurrenciesCore {
 	
 	@Transactional
 	public static Account openAccount(String name) throws CurrenciesException {
+		return openAccount(name, null);
+	}
+	
+	public static Account openAccount(String name, String owner) throws CurrenciesException {
+		if (name.length() <= 16) {
+			throw new CurrenciesException("Non-player accounts must be longer than 16 characters.");
+		}
+		
+		Account nameAccount = Currencies.getInstance().getDatabase().find(Account.class)
+			.where()
+			.eq("name", name)
+			.findUnique();
+		if (nameAccount != null) {
+			throw new CurrenciesException("Account with name " + name + " already exists.");
+		}
+		
 		Account account = new Account();
+		// TODO: See if this name is in-use by a Minecraft account to move check out of event
 		account.setName(name);
 		account.setUuid(null);
 		account.setDefaultCurrency(null);
 		account.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		account.setDateModified(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(account);
+		
+		if (owner != null) {
+			Account ownerAccount = Currencies.getInstance().getDatabase().find(Account.class)
+				.where()
+				.eq("nane", owner)
+				.findUnique();
+			
+			if (ownerAccount == null) {
+				throw new CurrenciesException("Owner " + owner + " does not exist.");
+			}
+			
+			Holder h = new Holder();
+			HolderPK hpk = new HolderPK();
+			hpk.setParentAccountId(ownerAccount.getId());
+			hpk.setChildAccountId(account.getId());
+			h.setLength((short) 1);
+			Currencies.getInstance().getDatabase().save(h);
+		}
 		
 		return account;
 	}
@@ -429,7 +472,6 @@ public final class CurrenciesCore {
 		Account toAccount = getAccountFromPlayer(to, true);
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long payAmount = parseCurrency(currency, amount);
-		
 		if (fromAccount.getId() == toAccount.getId()) {
 			throw new CurrenciesException("You cannot pay yourself.");
 		}
@@ -440,6 +482,25 @@ public final class CurrenciesCore {
 		
 		if (toAccount.getId() >= 1 && toAccount.getId() <= 4) {
 			throw new CurrenciesException("Cannot pay a reserved account.");
+		}
+		
+		if (payAmount < 0) {
+			throw new CurrenciesException("Cannot pay someone a negative amount.");
+		}
+		
+		compactHoldings(fromAccount);
+		
+		Unit baseUnit = getBaseUnit(currency);
+		Holding baseHoldings = Currencies.getInstance().getDatabase().find(Holding.class)
+			.where()
+			.eq("account", fromAccount)
+			.eq("unit", baseUnit)
+			.findUnique();
+		if (baseHoldings == null) {
+			throw new CurrenciesException("You have 0" + baseUnit.getSymbol() + ". You cannot pay " + amount + " to " + to + ".");
+		} else if (baseHoldings.getAmount() < payAmount) {
+			throw new CurrenciesException("Cannot pay " + amount + " to " + to + " because it is greater than " + 
+				formatCurrency(currency, baseHoldings.getAmount()) + ", your current balance.");
 		}
 		
 		Transaction t = transferAmount(fromAccount, toAccount, currency, payAmount);
@@ -467,6 +528,10 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Cannot bill a reserved account.");
 		}
 		
+		if (billAmount < 0) {
+			throw new CurrenciesException("Cannot bill someone a negative amount.");
+		}
+		
 		Transaction t = new Transaction();
 		t.setSender(fromAccount);
 		t.setRecipient(toAccount);
@@ -482,12 +547,12 @@ public final class CurrenciesCore {
 		return t;
 	}
 	
-	public static Transaction paybill(String from) throws CurrenciesException {
-		return paybill(from, null);
+	public static Transaction processBill(String from, boolean pay) throws CurrenciesException {
+		return processBill(from, pay, null);
 	}
 	
 	@Transactional
-	public static Transaction paybill(String from, String transaction) throws CurrenciesException {
+	public static Transaction processBill(String from, boolean pay, String transaction) throws CurrenciesException {
 		Account account = getAccountFromPlayer(from, true);
 		Transaction t = null;
 		if (transaction == null) {
@@ -516,12 +581,28 @@ public final class CurrenciesCore {
 			}
 			
 			if (account.getId() != t.getRecipient().getId()) {
-				throw new CurrenciesException("You can only pay bills for which you are the recipient.");
+				throw new CurrenciesException("You can only pay/reject bills for which you are the recipient.");
 			}
 		}
 		
+		compactHoldings(account);
+		
+		Currency currency = t.getUnit().getCurrency();
+		Unit baseUnit = getBaseUnit(currency);
+		Holding baseHoldings = Currencies.getInstance().getDatabase().find(Holding.class)
+			.where()
+			.eq("account", account)
+			.eq("unit", baseUnit)
+			.findUnique();
+		if (baseHoldings == null) {
+			throw new CurrenciesException("You have 0" + baseUnit.getSymbol() + ". You cannot pay " + formatCurrency(currency, t.getTransactionAmount()) + " to " + t.getRecipient().getName() + ".");
+		} else if (baseHoldings.getAmount() < t.getTransactionAmount()) {
+			throw new CurrenciesException("Cannot pay " + formatCurrency(currency, t.getTransactionAmount()) + " to " + t.getRecipient().getName() + " because it is greater than " + 
+				formatCurrency(currency, baseHoldings.getAmount()) + ", your current balance.");
+		}
+		
 		transferAmount(t.getSender(), t.getRecipient(), t.getUnit().getCurrency(), t.getTransactionAmount());
-		t.setPaid(true);
+		t.setPaid(pay);
 		t.setDatePaid(new Timestamp(Calendar.getInstance().getTimeInMillis()));
 		Currencies.getInstance().getDatabase().save(t);
 		return t;
@@ -549,13 +630,17 @@ public final class CurrenciesCore {
 	
 	@Transactional
 	public static Transaction credit(String player, String acronym, String amount) throws CurrenciesException {
-		Account banker = getBanker();
+		Account banker = getMinecraftCentralBanker();
 		Account account = getAccountFromPlayer(player, true);
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long addAmount = parseCurrency(currency, amount);
 		
 		if (account.getId() >= 1 && account.getId() <= 4) {
 			throw new CurrenciesException("Cannot credit a reserved account.");
+		}
+		
+		if (addAmount < 0) {
+			throw new CurrenciesException("Cannot credit someone a negative amount.");
 		}
 		
 		Transaction t = transferAmount(banker, account, currency, addAmount);
@@ -566,12 +651,16 @@ public final class CurrenciesCore {
 	@Transactional
 	public static Transaction debit(String player, String acronym, String amount) throws CurrenciesException {
 		Account account = getAccountFromPlayer(player, true);
-		Account banker = getBanker();
+		Account banker = getMinecraftCentralBanker();
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long removeAmount = parseCurrency(currency, amount);
 		
 		if (account.getId() >= 1 && account.getId() <= 4) {
 			throw new CurrenciesException("Cannot debit a reserved account.");
+		}
+		
+		if (removeAmount < 0) {
+			throw new CurrenciesException("Cannot debit someone a negative amount.");
 		}
 		
 		Transaction t = transferAmount(account, banker, currency, removeAmount);
@@ -644,24 +733,24 @@ public final class CurrenciesCore {
 	 * 
 	 */
 	
-	public static Account getCentralBank() {
+	public static Account getMinecraftCentralBank() {
 		return Currencies.getInstance().getDatabase().find(Account.class)
-			.where().eq("id", Currencies.CENTRAL_BANK).findUnique();
+			.where().eq("id", CurrenciesCore.MINECRAFT_CENTRAL_BANK).findUnique();
 	}
 	
-	public static Account getBanker() {
+	public static Account getMinecraftCentralBanker() {
 		return Currencies.getInstance().getDatabase().find(Account.class)
-			.where().eq("id", Currencies.BANKER).findUnique();
+			.where().eq("id", CurrenciesCore.MINECRAFT_CENTRAL_BANKER).findUnique();
 	}
 	
-	public static Account getBlackMarket() {
+	public static Account getTheEndermanMarket() {
 		return Currencies.getInstance().getDatabase().find(Account.class)
-			.where().eq("id", Currencies.BLACK_MARKET).findUnique();
+			.where().eq("id", CurrenciesCore.THE_ENDERMAN_MARKET).findUnique();
 	}
 	
-	public static Account getTrader() {
+	public static Account getTheEndermanMarketeer() {
 		return Currencies.getInstance().getDatabase().find(Account.class)
-			.where().eq("id", Currencies.TRADER).findUnique();
+			.where().eq("id", CurrenciesCore.THE_ENDERMAN_MARKETEER).findUnique();
 	}
 	
 	public static Account getAccountFromPlayer(String player, boolean exception) throws CurrenciesException {
@@ -682,15 +771,15 @@ public final class CurrenciesCore {
 		return currency;
 	}
 	
-	public static Unit getBaseUnit(Currency currency) throws CurrenciesException {
+	public static Unit getBaseUnit(Currency currency) {
 		Unit base = Currencies.getInstance().getDatabase().find(Unit.class)
 			.where()
 			.eq("currency", currency)
 			.eq("childUnit", null)
 			.findUnique();
-		if (base == null) {
-			throw new CurrenciesException("Currency " + currency.getAcronym() + " has no base.");
-		}
+		//if (base == null) {
+		//	throw new CurrenciesException("Currency " + currency.getAcronym() + " has no base.");
+		//}
 		return base;
 	}
 	
@@ -742,40 +831,63 @@ public final class CurrenciesCore {
 		return currencyBaseAmount;
 	}
 	
-	private static void compactHoldings(Account account ) {
-		List<Holding> holdings = account.getHoldings();
-		Map<Currency, Long> swapMap = new HashMap<>();
+	private static void compactHoldings(Account account) {
+		/*
+		 * First, create a map of each currency to all holdings
+		 * with units in that currency.
+		 */
+		Map<Currency, List<Holding>> holdingsByCurrency = new HashMap<>();
+		for (Holding h : account.getHoldings()) {
+			Currency c = h.getUnit().getCurrency();
+			
+			if (holdingsByCurrency.containsKey(c)) {
+				List<Holding> holdingsList = holdingsByCurrency.get(c);
+				holdingsList.add(h);
+			} else {
+				List<Holding> holdingsList = new ArrayList<>();
+				holdingsList.add(h);
+				holdingsByCurrency.put(c, holdingsList);
+			}
+		}
 		
-		Iterator<Holding> ih = holdings.iterator();
-		while (ih.hasNext()) {
-			Holding holding = ih.next();
+		/*
+		 * Process each of the currencies, and do extra work when more than
+		 * one unit is found.
+		 */
+		for (Map.Entry<Currency, List<Holding>> entry : holdingsByCurrency.entrySet()) {
+			Currency c = entry.getKey();
+			List<Holding> holdings = entry.getValue();
 			
-			Unit u = holding.getUnit();
-			Currency c = u.getCurrency();
-			
-			if (!u.getPrime()) {
-				long tempAmount = 0;
-				if (swapMap.containsKey(c)) {
-					tempAmount += swapMap.get(c);
+			Unit baseUnit = getBaseUnit(c);
+			if (holdings.size() > 1) {
+				Holding baseHolding = null;
+				Iterator<Holding> i = holdings.iterator();
+				while (i.hasNext()) {
+					Holding next = i.next();
+					if (next.getUnit().getId() == baseUnit.getId()) {
+						baseHolding = next;
+						i.remove();
+					}
 				}
-				tempAmount += holding.getAmount();
-				swapMap.put(c, tempAmount);
-				Currencies.getInstance().getDatabase().delete(holding);
-				ih.remove();
+				
+				if (baseHolding == null) {
+					baseHolding = new Holding();
+					HoldingPK baseHoldingPK = new HoldingPK();
+					baseHoldingPK.setAccountId(account.getId());
+					baseHoldingPK.setUnitId(baseUnit.getId());
+					baseHolding.setAmount(0);
+				}
+				
+				i = holdings.iterator();
+				while (i.hasNext()) {
+					Holding next = i.next();
+					long baseAmount = next.getAmount() * next.getUnit().getBaseMultiples();
+					baseHolding.setAmount(baseHolding.getAmount() + baseAmount);
+					Currencies.getInstance().getDatabase().delete(next);
+					i.remove();
+				}
 			}
 		}
-		
-		for (Holding holding : holdings) {
-			Unit u = holding.getUnit();
-			Currency c = u.getCurrency();
-			
-			if (u.getPrime() && swapMap.containsKey(c)) {
-				holding.setAmount(holding.getAmount() + swapMap.get(c));
-				swapMap.remove(c);
-			}
-		}
-		
-		// TODO: This method is horrible, code the simple cases first
 	}
 	
 	/*
@@ -799,6 +911,10 @@ public final class CurrenciesCore {
 			.eq("currency", c).eq("main", true).orderBy().desc("base_multiples").findList();
 		
 		String currency = "";
+		if (amount < 0) {
+			currency += "-";
+			amount = Math.abs(amount);
+		}
 		long remainder = amount;
 		for (Unit u : units) {
 			if (u.getBaseMultiples() > 0) {
@@ -826,6 +942,12 @@ public final class CurrenciesCore {
 	}
 	
 	public static long parseCurrency(Currency currency, String amount) throws CurrenciesException {
+		boolean isPositive = true;
+		if (amount.matches("(^-*).*")) {
+			isPositive = false;
+			amount = amount.replaceAll("(^-*)", "");
+		}
+		
 		// http://stackoverflow.com/questions/2206378/how-to-split-a-string-but-also-keep-the-delimiters
 		String[] parts = amount.replaceAll("([0-9-]+)", "|$1|").replaceAll("(^\\|*)|(\\|*$)","").split("\\|");
 		if (Currencies.DEBUG) {
@@ -858,7 +980,7 @@ public final class CurrenciesCore {
 				}
 			} else {
 				try {
-					partAmount = Long.parseLong(part);
+					partAmount = Math.abs(Long.parseLong(part));
 				} catch (NumberFormatException e) {
 					throw new CurrenciesException(part + " could not be parsed into a number.");
 				}
@@ -884,7 +1006,7 @@ public final class CurrenciesCore {
 			Currencies.getInstance().getLogger().info("PARSE CURRENCY - FINAL AMOUNT: " + baseAmount);
 		}
 		
-		return baseAmount;
+		return isPositive ? baseAmount : baseAmount * -1;
 	}
 	
 	public static Currency getCurrencyFromAmount(Account account, String amount) throws CurrenciesException {
