@@ -59,6 +59,7 @@ public class Currencies extends JavaPlugin implements Listener {
 		String configVersion = getConfig().getString("version");
 		if (!VERSION.equals(configVersion)) {
 			getConfig().set("version", VERSION);
+			saveConfig();
 		}
 		Currencies.DEBUG = getConfig().getBoolean("debug");
 		

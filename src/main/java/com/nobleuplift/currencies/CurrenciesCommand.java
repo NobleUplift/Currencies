@@ -353,12 +353,12 @@ public final class CurrenciesCommand {
 									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " and s/he " 
 									 + (t.getPaid() == null ? " has not paid." : (t.getPaid() ? " paid." : " did not pay."))
 								);
-							} else if (t.getSender().getId() == CurrenciesCore.MINECRAFT_CENTRAL_BANKER) {
+							} else if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_CREDIT_ID) {
 								sender.sendMessage(t.getId() + ". Credited " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " to " + t.getRecipient().getName());
-							} else if (t.getRecipient().getId() == CurrenciesCore.MINECRAFT_CENTRAL_BANKER) {
+							} else if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_DEBIT_ID) {
 								sender.sendMessage(t.getId() + ". Debited " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " from " + t.getRecipient().getName());
-							} else if (t.getRecipient().getId() == CurrenciesCore.MINECRAFT_CENTRAL_BANK) {
-								sender.sendMessage(t.getId() + ". Bankrupted " + t.getRecipient().getName() + " on " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()));
+							} else if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_BANKRUPT_ID) {
+								sender.sendMessage(t.getId() + ". Bankrupted " + t.getSender().getName() + " on " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()));
 							} else {
 								sender.sendMessage(t.getId() + ". " + t.getSender().getName() + (t.getPaid() == null ? " has not paid " : (t.getPaid() ? " paid " : " did not pay ")) +
 									t.getRecipient().getName() + " " + 
