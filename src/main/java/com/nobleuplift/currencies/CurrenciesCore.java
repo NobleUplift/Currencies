@@ -1,14 +1,10 @@
 package com.nobleuplift.currencies;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.yaml.snakeyaml.extensions.compactnotation.CompactConstructor;
 
 import com.avaje.ebean.annotation.Transactional;
 import com.nobleuplift.currencies.entities.Account;
@@ -415,6 +411,11 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Owner " + owner + " does not exist.");
 		}
 		
+		account = Currencies.getInstance().getDatabase().find(Account.class)
+			.where()
+			.eq("name", name)
+			.findUnique();
+		
 		Holder root = new Holder();
 		HolderPK rpk = new HolderPK();
 		rpk.setParentAccountId(account.getId());
@@ -494,7 +495,7 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Cannot pay a reserved account.");
 		}
 		
-		if (payAmount < 0) {
+		if (payAmount <= 0) {
 			throw new CurrenciesException("Cannot pay someone a negative amount.");
 		}
 		
@@ -539,7 +540,7 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Cannot bill a reserved account.");
 		}
 		
-		if (billAmount < 0) {
+		if (billAmount <= 0) {
 			throw new CurrenciesException("Cannot bill someone a negative amount.");
 		}
 		
@@ -651,7 +652,7 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Cannot credit a reserved account.");
 		}
 		
-		if (addAmount < 0) {
+		if (addAmount <= 0) {
 			throw new CurrenciesException("Cannot credit someone a negative amount.");
 		}
 		
@@ -672,7 +673,7 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Cannot debit a reserved account.");
 		}
 		
-		if (removeAmount < 0) {
+		if (removeAmount <= 0) {
 			throw new CurrenciesException("Cannot debit someone a negative amount.");
 		}
 		
@@ -712,6 +713,11 @@ public final class CurrenciesCore {
 				.findList();
 			
 			for (Holding h : holdings) {
+				if (h.getAmount() == 0) {
+					Currencies.getInstance().getDatabase().delete(h);
+					continue;
+				}
+				
 				Transaction t = transferAmount(account, centralBank, currency, h.getAmount());
 				t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
 				Currencies.getInstance().getDatabase().save(t);
@@ -742,6 +748,11 @@ public final class CurrenciesCore {
 				.findList();
 			
 			for (Holding h : holdings) {
+				if (h.getAmount() == 0) {
+					Currencies.getInstance().getDatabase().delete(h);
+					continue;
+				}
+				
 				Transaction t = transferAmount(account, centralBank, currency, h.getAmount());
 				t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
 				Currencies.getInstance().getDatabase().save(t);
@@ -756,6 +767,11 @@ public final class CurrenciesCore {
 				.where().eq("account", account).findList();
 			
 			for (Holding h : holdings) {
+				if (h.getAmount() == 0) {
+					Currencies.getInstance().getDatabase().delete(h);
+					continue;
+				}
+				
 				Transaction t = transferAmount(account, centralBank, h.getUnit().getCurrency(), h.getAmount());
 				t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
 				Currencies.getInstance().getDatabase().save(t);
@@ -902,6 +918,11 @@ public final class CurrenciesCore {
 			}
 			
 			for (Holding h : nonBaseHoldings) {
+				if (h.getAmount() == 0) {
+					Currencies.getInstance().getDatabase().delete(h);
+					continue;
+				}
+				
 				Unit nonBaseUnit = h.getUnit();
 				Unit baseUnit = getBaseUnit(nonBaseUnit.getCurrency());
 				
@@ -1002,39 +1023,48 @@ public final class CurrenciesCore {
 		return retval;
 	}
 	
-	public static String formatCurrency(Currency c, long amount) {
+	public static String formatCurrency(Currency currency, long amount) {
 		List<Unit> units = Currencies.getInstance().getDatabase().find(Unit.class).where()
-			.eq("currency", c).eq("main", true).orderBy().desc("base_multiples").findList();
+			.eq("currency", currency).eq("main", true).orderBy().desc("base_multiples").findList();
 		
-		String currency = "";
+		String retval = "";
 		if (amount < 0) {
-			currency += "-";
+			retval += "-";
 			amount = Math.abs(amount);
 		}
+		Unit prime = null;
 		long remainder = amount;
 		for (Unit u : units) {
+			if (u.isPrime()) {
+				prime = u;
+			}
+			
 			if (u.getBaseMultiples() > 0) {
 				long quotient = remainder / u.getBaseMultiples();
 				if (quotient == 0) {
 					continue;
 				}
 				
-				if (c.getPrefix()) {
-					currency += u.getSymbol() + quotient;
+				if (currency.getPrefix()) {
+					retval += u.getSymbol() + quotient;
 				} else {
-					currency += quotient + u.getSymbol();
+					retval += quotient + u.getSymbol();
 				}
 				remainder = remainder % u.getBaseMultiples();
 			} else if (remainder != 0) {
-				if (c.getPrefix()) {
-					currency += u.getSymbol() + remainder;
+				if (currency.getPrefix()) {
+					retval += u.getSymbol() + remainder;
 				} else {
-					currency += remainder + u.getSymbol();
+					retval += remainder + u.getSymbol();
 				}
 			}
 		}
 		
-		return currency;
+		if (amount == 0 && prime != null) {
+			retval += currency.isPrefix() ? prime.getSymbol() + "0" : "0" + prime.getSymbol();
+		}
+		
+		return retval;
 	}
 	
 	public static long parseCurrency(Currency currency, String amount) throws CurrenciesException {

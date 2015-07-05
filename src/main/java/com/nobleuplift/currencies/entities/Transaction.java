@@ -39,7 +39,7 @@ public class Transaction implements Serializable {
 	@Column(name="transaction_amount", nullable=false)
 	private Long transactionAmount;
 
-	@Column(name="type_id", insertable=false, updatable=false, nullable=false)
+	@Column(name="type_id", nullable=false)
 	private Short typeId;
 
 	//bi-directional many-to-one association to Account
@@ -98,6 +98,10 @@ public class Transaction implements Serializable {
 
 	public void setFinalSenderAmount(Long finalSenderAmount) {
 		this.finalSenderAmount = finalSenderAmount;
+	}
+	
+	public Boolean isPaid() {
+		return this.paid;
 	}
 
 	public Boolean getPaid() {

@@ -13,23 +13,23 @@ public class HolderPK implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Column(name="parent_account_id", insertable=false, updatable=false, unique=true, nullable=false)
-	private int parentAccountId;
+	private Integer parentAccountId;
 
 	@Column(name="child_account_id", insertable=false, updatable=false, unique=true, nullable=false)
-	private int childAccountId;
+	private Integer childAccountId;
 
 	public HolderPK() {
 	}
-	public int getParentAccountId() {
+	public Integer getParentAccountId() {
 		return this.parentAccountId;
 	}
-	public void setParentAccountId(int parentAccountId) {
+	public void setParentAccountId(Integer parentAccountId) {
 		this.parentAccountId = parentAccountId;
 	}
-	public int getChildAccountId() {
+	public Integer getChildAccountId() {
 		return this.childAccountId;
 	}
-	public void setChildAccountId(int childAccountId) {
+	public void setChildAccountId(Integer childAccountId) {
 		this.childAccountId = childAccountId;
 	}
 

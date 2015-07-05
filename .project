@@ -21,12 +21,12 @@
 			</arguments>
 		</buildCommand>
 		<buildCommand>
-			<name>com.avaje.eclipse.buildplugin.enhanceBuilder</name>
+			<name>org.eclipse.wst.validation.validationbuilder</name>
 			<arguments>
 			</arguments>
 		</buildCommand>
 		<buildCommand>
-			<name>org.eclipse.wst.validation.validationbuilder</name>
+			<name>com.avaje.eclipse.buildplugin.enhanceBuilder</name>
 			<arguments>
 			</arguments>
 		</buildCommand>
