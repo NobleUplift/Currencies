@@ -18,19 +18,27 @@ public class HoldingPK implements Serializable {
 	@Column(name="unit_id", insertable=false, updatable=false, unique=true, nullable=false)
 	private Short unitId;
 
-	public HoldingPK() {
-	}
+	public HoldingPK() { }
+	
 	public Integer getAccountId() {
 		return this.accountId;
 	}
+	
 	public void setAccountId(Integer accountId) {
 		this.accountId = accountId;
 	}
+	
 	public Short getUnitId() {
 		return this.unitId;
 	}
+	
 	public void setUnitId(Short unitId) {
 		this.unitId = unitId;
+	}
+	
+	@Override
+	public String toString() {
+		return "HoldingPK [accountId=" + accountId + ", unitId=" + unitId + "]";
 	}
 
 	public boolean equals(Object other) {

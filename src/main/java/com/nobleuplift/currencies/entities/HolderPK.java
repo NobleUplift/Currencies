@@ -18,19 +18,28 @@ public class HolderPK implements Serializable {
 	@Column(name="child_account_id", insertable=false, updatable=false, unique=true, nullable=false)
 	private Integer childAccountId;
 
-	public HolderPK() {
-	}
+	public HolderPK() { }
+	
 	public Integer getParentAccountId() {
 		return this.parentAccountId;
 	}
+	
 	public void setParentAccountId(Integer parentAccountId) {
 		this.parentAccountId = parentAccountId;
 	}
+	
 	public Integer getChildAccountId() {
 		return this.childAccountId;
 	}
+	
 	public void setChildAccountId(Integer childAccountId) {
 		this.childAccountId = childAccountId;
+	}
+
+	@Override
+	public String toString() {
+		return "HolderPK [parentAccountId=" + parentAccountId
+				+ ", childAccountId=" + childAccountId + "]";
 	}
 
 	public boolean equals(Object other) {

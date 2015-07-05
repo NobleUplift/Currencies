@@ -68,8 +68,7 @@ public class Holder implements Serializable {
 
 	@Override
 	public String toString() {
-		return "Holder [id=" + id + ", length=" + length + ", childAccount="
-				+ childAccount + ", parentAccount=" + parentAccount + "]";
+		return "Holder [id=" + id + ", length=" + length + "]";
 	}
 
 	@Override

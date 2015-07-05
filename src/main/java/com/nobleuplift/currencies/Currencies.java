@@ -25,9 +25,9 @@ import com.nobleuplift.currencies.entities.Transaction;
 import com.nobleuplift.currencies.entities.Unit;
 
 public class Currencies extends JavaPlugin implements Listener {
-	public static final String VERISON = "${project.version}";
+	public static final String VERSION = "${project.version}";
 	public static final String PREFIX = "§a[Currencies]§r ";
-	public static boolean DEBUG = true;
+	public static boolean DEBUG = false;
 
 	protected static Currencies instance;
 	
@@ -53,8 +53,14 @@ public class Currencies extends JavaPlugin implements Listener {
 	public void onEnable() {
 		instance = this;
 		
-		getConfig().options().copyDefaults(true);
+		getConfig().options().copyDefaults(false);
 		saveConfig();
+		
+		String configVersion = getConfig().getString("version");
+		if (!VERSION.equals(configVersion)) {
+			getConfig().set("version", VERSION);
+		}
+		Currencies.DEBUG = getConfig().getBoolean("debug");
 		
 		Bukkit.getPluginManager().registerEvents(this, this);
 		
@@ -67,8 +73,6 @@ public class Currencies extends JavaPlugin implements Listener {
 		
 		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` VALUES (1, 'Minecraft Central Bank', NULL, NULL, NOW(), NOW()), (2, 'Minecraft Central Banker', NULL, NULL, NOW(), NOW()), (3, 'The Enderman Market', NULL, NULL, NOW(), NOW()), (4, 'The Enderman Marketeer', NULL, NULL, NOW(), NOW());").execute();
 		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_holder` VALUES (1, 1, 0), (2, 2, 0), (3, 3, 0), (4, 4, 0), (2, 1, 1), (4, 3, 1);");
-		
-		Currencies.DEBUG = getConfig().getBoolean("debug");
 		
 		System.out.print("[Currencies] Enabled.");
 	}

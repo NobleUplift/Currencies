@@ -420,6 +420,7 @@ public final class CurrenciesCore {
 		HolderPK rpk = new HolderPK();
 		rpk.setParentAccountId(account.getId());
 		rpk.setChildAccountId(account.getId());
+		root.setId(rpk);
 		root.setLength((short) 0);
 		Currencies.getInstance().getDatabase().save(root);
 		
@@ -427,6 +428,7 @@ public final class CurrenciesCore {
 		HolderPK hpk = new HolderPK();
 		hpk.setParentAccountId(ownerAccount.getId());
 		hpk.setChildAccountId(account.getId());
+		h.setId(hpk);
 		h.setLength((short) 1);
 		Currencies.getInstance().getDatabase().save(h);
 		
@@ -1205,7 +1207,11 @@ public final class CurrenciesCore {
 			Currencies.getInstance().getLogger().info("CREDIT - FROM AMOUNT: " + fromAmount);
 		}
 		fromHolding.setAmount(fromAmount);
-		Currencies.getInstance().getDatabase().save(fromHolding);
+		if (fromAmount == 0) {
+			Currencies.getInstance().getDatabase().delete(fromHolding);
+		} else {
+			Currencies.getInstance().getDatabase().save(fromHolding);
+		}
 		
 		Holding toHolding = Currencies.getInstance().getDatabase().find(Holding.class)
 			.where()
