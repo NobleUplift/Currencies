@@ -350,8 +350,8 @@ public final class CurrenciesCommand {
 								);
 							} else if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_BILL_ID) {
 								sender.sendMessage(t.getId() + ". " + t.getRecipient().getName() + " billed " + t.getSender().getName() + " for " +
-									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " and s/he " 
-									 + (t.getPaid() == null ? " has not paid." : (t.getPaid() ? " paid." : " did not pay."))
+									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " and " + t.getSender().getName() + 
+									(t.getPaid() == null ? " has not paid." : (t.getPaid() ? " paid." : " did not pay."))
 								);
 							} else if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_CREDIT_ID) {
 								sender.sendMessage(t.getId() + ". Credited " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " to " + t.getRecipient().getName());

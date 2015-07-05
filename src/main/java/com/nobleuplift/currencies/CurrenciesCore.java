@@ -595,9 +595,17 @@ public final class CurrenciesCore {
 				throw new CurrenciesException("Transaction " + transaction + " does not exist.");
 			}
 			
-			if (account.getId() != t.getRecipient().getId()) {
+			if (account.getId() != t.getSender().getId()) {
 				throw new CurrenciesException("You can only pay/reject bills for which you are the recipient.");
 			}
+		}
+		
+		if (t.getTypeId() != TRANSACTION_TYPE_BILL_ID) {
+			throw new CurrenciesException("Transaction is not a bill.");
+		}
+		
+		if (t.getPaid() != null) {
+			throw new CurrenciesException("Bill has already been " + (t.getPaid() ? "paid." : "rejected."));
 		}
 		
 		compactHoldings(account);
