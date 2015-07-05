@@ -25,6 +25,7 @@ commands:
             ${currencies.pay}
             ${currencies.bill}
             ${currencies.paybill}
+            ${currencies.rejectbill}
             ${currencies.transactions}
             ${currencies.credit}
             ${currencies.debit}

@@ -212,6 +212,17 @@ public class Account implements Serializable {
 	}
 
 	@Override
+	public String toString() {
+		return "Account [id=" + id + ", dateCreated=" + dateCreated
+				+ ", dateModified=" + dateModified + ", name=" + name
+				+ ", uuid=" + uuid + ", parentAccounts=" + parentAccounts
+				+ ", childAccounts=" + childAccounts + ", defaultCurrency="
+				+ defaultCurrency + ", holdings=" + holdings
+				+ ", senderTransactions=" + senderTransactions
+				+ ", recipientTransactions=" + recipientTransactions + "]";
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;

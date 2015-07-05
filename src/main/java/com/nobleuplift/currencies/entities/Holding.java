@@ -65,6 +65,12 @@ public class Holding implements Serializable {
 	public void setUnit(Unit unit) {
 		this.unit = unit;
 	}
+	
+	@Override
+	public String toString() {
+		return "Holding [id=" + id + ", amount=" + amount + ", account="
+				+ account + ", unit=" + unit + "]";
+	}
 
 	@Override
 	public int hashCode() {

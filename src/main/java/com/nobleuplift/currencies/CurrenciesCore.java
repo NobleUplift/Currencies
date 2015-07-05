@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.yaml.snakeyaml.extensions.compactnotation.CompactConstructor;
+
 import com.avaje.ebean.annotation.Transactional;
 import com.nobleuplift.currencies.entities.Account;
 import com.nobleuplift.currencies.entities.Currency;
@@ -54,6 +56,12 @@ public final class CurrenciesCore {
 	public static final int MINECRAFT_CENTRAL_BANKER = 2;
 	public static final int THE_ENDERMAN_MARKET = 3;
 	public static final int THE_ENDERMAN_MARKETEER = 4;
+	
+	public static final short TRANSACTION_TYPE_PAY_ID = 1;
+	public static final short TRANSACTION_TYPE_BILL_ID = 2;
+	public static final short TRANSACTION_TYPE_CREDIT_ID = 3;
+	public static final short TRANSACTION_TYPE_DEBIT_ID = 4;
+	public static final short TRANSACTION_TYPE_BANKRUPT_ID = 5;
 	
 	public static void createCurrency(String acronym, String name) throws CurrenciesException {
 		createCurrency(acronym, name, true);
@@ -506,6 +514,7 @@ public final class CurrenciesCore {
 		}
 		
 		Transaction t = transferAmount(fromAccount, toAccount, currency, payAmount);
+		t.setTypeId(TRANSACTION_TYPE_PAY_ID);
 		Currencies.getInstance().getDatabase().save(t);
 		return t;
 	}
@@ -538,6 +547,7 @@ public final class CurrenciesCore {
 		t.setSender(fromAccount);
 		t.setRecipient(toAccount);
 		t.setUnit(base);
+		t.setTypeId(TRANSACTION_TYPE_BILL_ID);
 		t.setTransactionAmount(billAmount);
 		t.setFinalSenderAmount(null);
 		t.setFinalRecipientAmount(null);
@@ -646,6 +656,7 @@ public final class CurrenciesCore {
 		}
 		
 		Transaction t = transferAmount(banker, account, currency, addAmount);
+		t.setTypeId(TRANSACTION_TYPE_CREDIT_ID);
 		Currencies.getInstance().getDatabase().save(t);
 		return t;
 	}
@@ -666,6 +677,7 @@ public final class CurrenciesCore {
 		}
 		
 		Transaction t = transferAmount(account, banker, currency, removeAmount);
+		t.setTypeId(TRANSACTION_TYPE_DEBIT_ID);
 		Currencies.getInstance().getDatabase().save(t);
 		return t;
 	}
@@ -682,11 +694,15 @@ public final class CurrenciesCore {
 	public static List<Holding> bankrupt(String player, String acronym, String amount) throws CurrenciesException {
 		Account account = Currencies.getInstance().getDatabase().find(Account.class)
 			.where().eq("name", player).findUnique();
+		Account centralBank = getMinecraftCentralBank();
+		Account centralBanker = getMinecraftCentralBanker();
 		
 		if (amount != null) {
 			Currency currency = getCurrencyFromAcronym(acronym, true);
-			Unit base = getBaseUnit(currency);
+			//Unit base = getBaseUnit(currency);
 			long bankruptAmount = parseCurrency(currency, amount);
+			
+			compactHoldings(account);
 			
 			// Reset a player's currency to this amount
 			List<Holding> holdings = Currencies.getInstance().getDatabase().find(Holding.class)
@@ -695,14 +711,24 @@ public final class CurrenciesCore {
 				.eq("unit.currency", currency)
 				.findList();
 			
-			Currencies.getInstance().getDatabase().delete(holdings);
+			for (Holding h : holdings) {
+				Transaction t = transferAmount(account, centralBank, currency, h.getAmount());
+				t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
+				Currencies.getInstance().getDatabase().save(t);
+			}
 			
-			Holding h = new Holding();
+			//Currencies.getInstance().getDatabase().delete(holdings);
+			
+			Transaction t = transferAmount(centralBanker, account, currency, bankruptAmount);
+			t.setTypeId(TRANSACTION_TYPE_CREDIT_ID);
+			Currencies.getInstance().getDatabase().save(t);
+			
+			/*Holding h = new Holding();
 			HoldingPK pk = new HoldingPK();
 			pk.setAccountId(account.getId());
 			pk.setUnitId(base.getId());
 			h.setAmount(bankruptAmount);
-			Currencies.getInstance().getDatabase().save(h);
+			Currencies.getInstance().getDatabase().save(h);*/
 			
 			return holdings;
 		} else if (acronym != null) {
@@ -715,7 +741,13 @@ public final class CurrenciesCore {
 				.eq("unit.currency", currency)
 				.findList();
 			
-			Currencies.getInstance().getDatabase().delete(holdings);
+			for (Holding h : holdings) {
+				Transaction t = transferAmount(account, centralBank, currency, h.getAmount());
+				t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
+				Currencies.getInstance().getDatabase().save(t);
+			}
+			
+			//Currencies.getInstance().getDatabase().delete(holdings);
 			
 			return holdings;
 		} else {
@@ -723,7 +755,13 @@ public final class CurrenciesCore {
 			List<Holding> holdings = Currencies.getInstance().getDatabase().find(Holding.class)
 				.where().eq("account", account).findList();
 			
-			Currencies.getInstance().getDatabase().delete(holdings);
+			for (Holding h : holdings) {
+				Transaction t = transferAmount(account, centralBank, h.getUnit().getCurrency(), h.getAmount());
+				t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
+				Currencies.getInstance().getDatabase().save(t);
+			}
+			
+			//Currencies.getInstance().getDatabase().delete(holdings);
 			
 			return holdings;
 		}
@@ -777,7 +815,7 @@ public final class CurrenciesCore {
 		Unit base = Currencies.getInstance().getDatabase().find(Unit.class)
 			.where()
 			.eq("currency", currency)
-			.eq("childUnit", null)
+			.isNull("childUnit")
 			.findUnique();
 		//if (base == null) {
 		//	throw new CurrenciesException("Currency " + currency.getAcronym() + " has no base.");
@@ -833,12 +871,68 @@ public final class CurrenciesCore {
 		return currencyBaseAmount;
 	}
 	
-	private static void compactHoldings(Account account) {
+	private static int compactHoldings(Account account) {
+		List<Holding> nonBaseHoldings = Currencies.getInstance().getDatabase().find(Holding.class)
+			.where()
+			.eq("account", account)
+			.isNotNull("unit.childUnit")
+			.findList();
+		if (Currencies.DEBUG) {
+			System.out.println("Non-base holdings: " + nonBaseHoldings);
+		}
+		
+		if (nonBaseHoldings.size() != 0) {
+			if (Currencies.DEBUG) {
+				System.out.println("Non-base holdings count: " + nonBaseHoldings.size());
+			}
+			
+			List<Holding> baseHoldings = Currencies.getInstance().getDatabase().find(Holding.class)
+				.where()
+				.eq("account", account)
+				.isNull("unit.childUnit")
+				.findList();
+			if (Currencies.DEBUG) {
+				System.out.println("Base holdings: " + nonBaseHoldings);
+			}
+			
+			Map<Currency, Holding> holdingsByCurrency = new HashMap<>();
+			for (Holding h : baseHoldings) {
+				Currency c = h.getUnit().getCurrency();
+				holdingsByCurrency.put(c, h);
+			}
+			
+			for (Holding h : nonBaseHoldings) {
+				Unit nonBaseUnit = h.getUnit();
+				Unit baseUnit = getBaseUnit(nonBaseUnit.getCurrency());
+				
+				Holding baseHolding = holdingsByCurrency.get(nonBaseUnit.getCurrency());
+				if (baseHolding == null) {
+					baseHolding = new Holding();
+					HoldingPK baseHoldingPK = new HoldingPK();
+					baseHoldingPK.setAccountId(account.getId());
+					baseHoldingPK.setUnitId(baseUnit.getId());
+					baseHolding.setAmount(0);
+				}
+				
+				long baseAmount = h.getAmount() * h.getUnit().getBaseMultiples();
+				if (Currencies.DEBUG) {
+					System.out.println("Base Holdings Amount: " + baseHolding.getAmount());
+					System.out.println("Base Amount: " + baseAmount);
+				}
+				
+				baseHolding.setAmount(baseHolding.getAmount() + baseAmount);
+				Currencies.getInstance().getDatabase().save(baseHolding);
+				Currencies.getInstance().getDatabase().delete(h);
+			}
+		}
+		
+		return nonBaseHoldings.size();
+		
 		/*
 		 * First, create a map of each currency to all holdings
 		 * with units in that currency.
 		 */
-		Map<Currency, List<Holding>> holdingsByCurrency = new HashMap<>();
+		/*Map<Currency, List<Holding>> holdingsByCurrency = new HashMap<>();
 		for (Holding h : account.getHoldings()) {
 			Currency c = h.getUnit().getCurrency();
 			
@@ -850,13 +944,13 @@ public final class CurrenciesCore {
 				holdingsList.add(h);
 				holdingsByCurrency.put(c, holdingsList);
 			}
-		}
+		}*/
 		
 		/*
 		 * Process each of the currencies, and do extra work when more than
 		 * one unit is found.
 		 */
-		for (Map.Entry<Currency, List<Holding>> entry : holdingsByCurrency.entrySet()) {
+		/*for (Map.Entry<Currency, List<Holding>> entry : holdingsByCurrency.entrySet()) {
 			Currency c = entry.getKey();
 			List<Holding> holdings = entry.getValue();
 			
@@ -889,7 +983,7 @@ public final class CurrenciesCore {
 					i.remove();
 				}
 			}
-		}
+		}*/
 	}
 	
 	/*
@@ -1061,7 +1155,7 @@ public final class CurrenciesCore {
 			.where()
 			.eq("account", fromAccount)
 			.eq("unit.currency", currency)
-			.eq("unit.childUnit", null)
+			.isNull("unit.childUnit")
 			.findUnique();
 		
 		if (fromHolding == null) {
@@ -1087,7 +1181,7 @@ public final class CurrenciesCore {
 			.where()
 			.eq("account", toAccount)
 			.eq("unit.currency", currency)
-			.eq("unit.childUnit", null)
+			.isNull("unit.childUnit")
 			.findUnique();
 		
 		if (toHolding == null) {

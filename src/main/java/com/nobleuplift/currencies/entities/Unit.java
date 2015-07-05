@@ -246,6 +246,16 @@ public class Unit implements Serializable {
 	}
 
 	@Override
+	public String toString() {
+		return "Unit [id=" + id + ", alternate=" + alternate
+				+ ", baseMultiples=" + baseMultiples + ", childMultiples="
+				+ childMultiples + ", dateCreated=" + dateCreated
+				+ ", dateModified=" + dateModified + ", main=" + main
+				+ ", name=" + name + ", prime=" + prime + ", symbol=" + symbol
+				+ "]";
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;

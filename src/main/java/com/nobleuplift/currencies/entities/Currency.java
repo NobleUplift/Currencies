@@ -170,6 +170,16 @@ public class Currency implements Serializable {
 	}
 
 	@Override
+	public String toString() {
+		return "Currency [id=" + id + ", acronym=" + acronym + ", dateCreated="
+				+ dateCreated + ", dateDeleted=" + dateDeleted
+				+ ", dateModified=" + dateModified + ", deleted=" + deleted
+				+ ", name=" + name + ", prefix=" + prefix
+				+ ", accountDefaults=" + accountDefaults + ", units=" + units
+				+ "]";
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;

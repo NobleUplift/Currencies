@@ -37,17 +37,20 @@ public class Transaction implements Serializable {
 	private Boolean paid;
 
 	@Column(name="transaction_amount", nullable=false)
-	private long transactionAmount;
+	private Long transactionAmount;
 
-	//bi-directional many-to-one association to Account
-	@ManyToOne
-	@JoinColumn(name="sender_id", nullable=false)
-	private Account sender;
+	@Column(name="type_id", insertable=false, updatable=false, nullable=false)
+	private Short typeId;
 
 	//bi-directional many-to-one association to Account
 	@ManyToOne
 	@JoinColumn(name="recipient_id", nullable=false)
 	private Account recipient;
+
+	//bi-directional many-to-one association to Account
+	@ManyToOne
+	@JoinColumn(name="sender_id", nullable=false)
+	private Account sender;
 
 	//bi-directional many-to-one association to Unit
 	@ManyToOne
@@ -96,10 +99,6 @@ public class Transaction implements Serializable {
 	public void setFinalSenderAmount(Long finalSenderAmount) {
 		this.finalSenderAmount = finalSenderAmount;
 	}
-	
-	public Boolean isPaid() {
-		return this.paid;
-	}
 
 	public Boolean getPaid() {
 		return this.paid;
@@ -109,20 +108,20 @@ public class Transaction implements Serializable {
 		this.paid = paid;
 	}
 
-	public long getTransactionAmount() {
+	public Long getTransactionAmount() {
 		return this.transactionAmount;
 	}
 
-	public void setTransactionAmount(long transactionAmount) {
+	public void setTransactionAmount(Long transactionAmount) {
 		this.transactionAmount = transactionAmount;
 	}
 
-	public Account getSender() {
-		return this.sender;
+	public Short getTypeId() {
+		return this.typeId;
 	}
 
-	public void setSender(Account sender) {
-		this.sender = sender;
+	public void setTypeId(Short typeId) {
+		this.typeId = typeId;
 	}
 
 	public Account getRecipient() {
@@ -133,12 +132,30 @@ public class Transaction implements Serializable {
 		this.recipient = recipient;
 	}
 
+	public Account getSender() {
+		return this.sender;
+	}
+
+	public void setSender(Account sender) {
+		this.sender = sender;
+	}
+
 	public Unit getUnit() {
 		return this.unit;
 	}
 
 	public void setUnit(Unit unit) {
 		this.unit = unit;
+	}
+
+	@Override
+	public String toString() {
+		return "Transaction [id=" + id + ", dateCreated=" + dateCreated
+				+ ", datePaid=" + datePaid + ", finalRecipientAmount="
+				+ finalRecipientAmount + ", finalSenderAmount="
+				+ finalSenderAmount + ", paid=" + paid + ", transactionAmount="
+				+ transactionAmount + ", typeId=" + typeId + ", recipient="
+				+ recipient + ", sender=" + sender + ", unit=" + unit + "]";
 	}
 
 	@Override

@@ -343,14 +343,27 @@ public final class CurrenciesCommand {
 						Currencies.tell(sender, "--------------------");
 						Currencies.tell(sender, "Transactions " + (((page - 1) * 10) + 1) + " through " + (((page - 1) * 10) + 10) + ":");
 						for (Transaction t : transactions) {
-							if (t.getSender().getId() == CurrenciesCore.MINECRAFT_CENTRAL_BANKER) {
+							if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_PAY_ID) {
+								sender.sendMessage(t.getId() + ". " + t.getSender().getName() + " paid " +
+									t.getRecipient().getName() + " " + 
+									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount())
+								);
+							} else if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_BILL_ID) {
+								sender.sendMessage(t.getId() + ". " + t.getRecipient().getName() + " billed " + t.getSender().getName() + " for " +
+									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " and s/he " 
+									 + (t.getPaid() == null ? " has not paid." : (t.getPaid() ? " paid." : " did not pay."))
+								);
+							} else if (t.getSender().getId() == CurrenciesCore.MINECRAFT_CENTRAL_BANKER) {
 								sender.sendMessage(t.getId() + ". Credited " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " to " + t.getRecipient().getName());
 							} else if (t.getRecipient().getId() == CurrenciesCore.MINECRAFT_CENTRAL_BANKER) {
 								sender.sendMessage(t.getId() + ". Debited " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " from " + t.getRecipient().getName());
+							} else if (t.getRecipient().getId() == CurrenciesCore.MINECRAFT_CENTRAL_BANK) {
+								sender.sendMessage(t.getId() + ". Bankrupted " + t.getRecipient().getName() + " on " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()));
 							} else {
 								sender.sendMessage(t.getId() + ". " + t.getSender().getName() + (t.getPaid() == null ? " has not paid " : (t.getPaid() ? " paid " : " did not pay ")) +
-									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) +  " to " + 
-									t.getRecipient().getName());
+									t.getRecipient().getName() + " " + 
+									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount())
+								);
 							}
 						}
 						Currencies.tell(sender, "--------------------");
