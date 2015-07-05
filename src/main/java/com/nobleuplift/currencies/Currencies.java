@@ -106,6 +106,7 @@ public class Currencies extends JavaPlugin implements Listener {
 			case "pay":
 			case "bill":
 			case "paybill":
+			case "rejectbill":
 			case "transactions":
 			case "credit":
 			case "debit":
