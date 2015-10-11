@@ -8,15 +8,5 @@
 		<class>com.nobleuplift.currencies.entities.HoldingPK</class>
 		<class>com.nobleuplift.currencies.entities.Holder</class>
 		<class>com.nobleuplift.currencies.entities.HolderPK</class>
-        <class>com.nobleuplift.currencies.entities.CurrenciesAccount</class>
-        <class>com.nobleuplift.currencies.entities.CurrenciesCurrency</class>
-        <class>com.nobleuplift.currencies.entities.CurrenciesHolder</class>
-        <class>com.nobleuplift.currencies.entities.CurrenciesHolderPK</class>
-        <class>com.nobleuplift.currencies.entities.CurrenciesHolding</class>
-        <class>com.nobleuplift.currencies.entities.CurrenciesHoldingPK</class>
-        <class>com.nobleuplift.currencies.entities.CurrenciesTransaction</class>
-        <class>com.nobleuplift.currencies.entities.CurrenciesTransactionType</class>
-        <class>com.nobleuplift.currencies.entities.CurrenciesUnit</class>
-        <class>com.nobleuplift.currencies.entities.TransactionType</class>
 	</persistence-unit>
 </persistence>

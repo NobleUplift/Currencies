@@ -1,6 +1,6 @@
 name: ${project.name}
 version: ${project.version}
-description: The most complex currency plugin ever made for Minecraft!
+description: ${plugin.description}
 
 author: ${plugin.author}
 website: ${plugin.website}

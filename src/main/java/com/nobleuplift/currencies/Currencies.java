@@ -24,6 +24,11 @@ import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
 import com.nobleuplift.currencies.entities.Unit;
 
+/**
+ * Created on 2015 April 22 at ‏‎08:58:50 PM.
+ * 
+ * @author Patrick
+ */
 public class Currencies extends JavaPlugin implements Listener {
 	public static final String VERSION = "${project.version}";
 	public static final String PREFIX = "§a[Currencies]§r ";
@@ -53,34 +58,59 @@ public class Currencies extends JavaPlugin implements Listener {
 	public void onEnable() {
 		instance = this;
 		
-		getConfig().options().copyDefaults(false);
-		saveConfig();
+		//getConfig().options().copyDefaults(false);
+		//saveConfig();
 		
 		String configVersion = getConfig().getString("version");
-		if (!VERSION.equals(configVersion)) {
-			getConfig().set("version", VERSION);
+		if ("new".equals(configVersion)) {
+			Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_currency` (   `id` SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,   `name` VARCHAR(64) NOT NULL,   `acronym` VARCHAR(3) NOT NULL,   `prefix` TINYINT UNSIGNED NOT NULL DEFAULT '1',   `date_created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   `date_modified` TIMESTAMP NOT NULL DEFAULT '1970-01-01 00:00:01',   `date_deleted` TIMESTAMP NULL,   `deleted` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',   PRIMARY KEY (`id`),   UNIQUE INDEX `name_UNIQUE` (`name` ASC),   UNIQUE INDEX `acronym_UNIQUE` (`acronym` ASC)) ENGINE = InnoDB;").execute();
+			Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_account` (   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,   `name` VARCHAR(64) NOT NULL,   `uuid` VARCHAR(37) NULL,   `default_currency_id` SMALLINT UNSIGNED NULL DEFAULT NULL,   `date_created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   `date_modified` TIMESTAMP NOT NULL DEFAULT '1970-01-01 00:00:01',   PRIMARY KEY (`id`),   UNIQUE INDEX `name_UNIQUE` (`name` ASC),   UNIQUE INDEX `uuid_UNIQUE` (`uuid` ASC),   INDEX `fk_currencies_account_currencies_currency1_idx` (`default_currency_id` ASC),   CONSTRAINT `fk_currencies_account_currencies_currency1`     FOREIGN KEY (`default_currency_id`)     REFERENCES  `currencies_currency` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
+			Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_unit` (   `id` SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,   `currency_id` SMALLINT UNSIGNED NOT NULL,   `child_unit_id` SMALLINT UNSIGNED NULL,   `name` VARCHAR(32) NOT NULL,   `alternate` VARCHAR(32) NOT NULL,   `symbol` VARCHAR(2) NOT NULL,   `prime` TINYINT(1) UNSIGNED NOT NULL,   `main` TINYINT(1) UNSIGNED NOT NULL,   `child_multiples` INT UNSIGNED NOT NULL,   `base_multiples` INT UNSIGNED NOT NULL,   `date_created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   `date_modified` TIMESTAMP NOT NULL DEFAULT '1970-01-01 00:00:01',   PRIMARY KEY (`id`),   INDEX `fk_currencies_currency_has_currencies_unit_idx` (`currency_id` ASC),   UNIQUE INDEX `name_UNIQUE` (`name` ASC),   UNIQUE INDEX `singular_UNIQUE` (`alternate` ASC),   INDEX `fk_currencies_unit_has_currencies_child_idx` (`child_unit_id` ASC),   CONSTRAINT `fk_currencies_currency_has_currencies_unit`     FOREIGN KEY (`currency_id`)     REFERENCES `currencies_currency` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_unit_has_currencies_child`     FOREIGN KEY (`child_unit_id`)     REFERENCES `currencies_unit` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
+			Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_holding` (   `account_id` INT UNSIGNED NOT NULL,   `unit_id` SMALLINT UNSIGNED NOT NULL,   `amount` BIGINT NOT NULL,   PRIMARY KEY (`account_id`, `unit_id`),   INDEX `fk_currencies_unit_has_currencies_holding_idx` (`unit_id` ASC),   INDEX `fk_currencies_account_has_currencies_holding_idx` (`account_id` ASC),   CONSTRAINT `fk_currencies_account_has_currencies_holding`     FOREIGN KEY (`account_id`)     REFERENCES `currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_unit_has_currencies_holding`     FOREIGN KEY (`unit_id`)     REFERENCES `currencies_unit` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
+			Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_holder` (   `parent_account_id` INT UNSIGNED NOT NULL,   `child_account_id` INT UNSIGNED NOT NULL,   `length` SMALLINT NOT NULL DEFAULT 1,   PRIMARY KEY (`parent_account_id`, `child_account_id`),   INDEX `fk_currencies_account_has_currencies_parent_account_idx` (`parent_account_id` ASC),   INDEX `fk_currencies_account_has_currencies_child_account_idx` (`child_account_id` ASC),   CONSTRAINT `fk_currencies_account_has_currencies_parent_account`     FOREIGN KEY (`parent_account_id`)     REFERENCES `currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_account_has_currencies_child_account`     FOREIGN KEY (`child_account_id`)     REFERENCES `currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
+			Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_transaction` (   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,   `sender_id` INT UNSIGNED NOT NULL,   `recipient_id` INT UNSIGNED NOT NULL,   `unit_id` SMALLINT UNSIGNED NOT NULL,   `type_id` SMALLINT UNSIGNED NOT NULL,   `transaction_amount` BIGINT NOT NULL,   `final_sender_amount` BIGINT NULL DEFAULT NULL,   `final_recipient_amount` BIGINT NULL,   `paid` TINYINT(1) UNSIGNED NULL DEFAULT '1',   `date_paid` TIMESTAMP NULL DEFAULT NULL,   `date_created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   PRIMARY KEY (`id`),   INDEX `fk_currencies_recipient_has_currencies_transaction_idx` (`recipient_id` ASC),   INDEX `fk_currencies_sender_has_currencies_transaction_idx` (`sender_id` ASC),   INDEX `fk_currencies_unit_has_currencies_transaction_idx` (`unit_id` ASC),   CONSTRAINT `fk_currencies_sender_has_currencies_transaction`     FOREIGN KEY (`sender_id`)     REFERENCES `minecraft`.`currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_recipient_has_currencies_transaction`     FOREIGN KEY (`recipient_id`)     REFERENCES `minecraft`.`currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_unit_has_currencies_transaction`     FOREIGN KEY (`unit_id`)     REFERENCES `minecraft`.`currencies_unit` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
+			
+			Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` VALUES (1, 'Minecraft Central Bank', NULL, NULL, NOW(), NOW()), (2, 'Minecraft Central Banker', NULL, NULL, NOW(), NOW()), (3, 'The Enderman Market', NULL, NULL, NOW(), NOW()), (4, 'The Enderman Marketeer', NULL, NULL, NOW(), NOW());").execute();
+			Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_holder` VALUES (1, 1, 0), (2, 2, 0), (3, 3, 0), (4, 4, 0), (2, 1, 1), (4, 3, 1);");
+
+			configVersion = "1.0.0";
+			getConfig().set("version", "1.0.0");
 			saveConfig();
 		}
+		
+		if ("1.0.0".equals(configVersion)) {
+			Currencies.getInstance().getDatabase().createSqlUpdate("ALTER TABLE `currencies_currency` ADD COLUMN `default_currency` TINYINT(1) NOT NULL DEFAULT '0' COMMENT '' AFTER `prefix`;").execute();
+			Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_currency` (`id`, `name`, `acronym`, `prefix`, `default_currency`) VALUES (1, 'Craftcoin', 'MCC', true, true);").execute();
+			Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_unit`(`id`,`currency_id`,`child_unit_id`,`name`,`alternate`,`symbol`,`prime`,`main`,`child_multiples`,`base_multiples`) VALUES (1, 1, 2, 'craftcoin', 'craftcoins', '$', true, true, 100, 100);").execute();
+			Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_unit`(`id`,`currency_id`,`child_unit_id`,`name`,`alternate`,`symbol`,`prime`,`main`,`child_multiples`,`base_multiples`) VALUES (2, 1, null, 'craftcent', 'craftcents', '.', false, true, 0, 0);").execute();
+			/* 
+			 * Since a server owner on 1.0.0 already has a currency, 
+			 * set the existing currency to be the default.
+			 * Assumes that the currency created already has a subunit, 
+			 * so that the INSERT IGNORE will skip an existing currency.
+			 */ 
+			Currencies.getInstance().getDatabase().createSqlUpdate("UPDATE `currencies_currency` SET `default_currency`='1' WHERE `id`='1';").execute();
+			
+			configVersion = "1.1.0";
+			getConfig().set("version", "1.1.0");
+			saveConfig();
+		}
+		
+		// TODO: Add error message?
+		//if (!VERSION.equals(configVersion)) {
+		//	getConfig().set("version", VERSION);
+		//	saveConfig();
+		//}
 		Currencies.DEBUG = getConfig().getBoolean("debug");
 		
 		Bukkit.getPluginManager().registerEvents(this, this);
 		
-		Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_currency` (   `id` SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,   `name` VARCHAR(64) NOT NULL,   `acronym` VARCHAR(3) NOT NULL,   `prefix` TINYINT UNSIGNED NOT NULL DEFAULT '1',   `date_created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   `date_modified` TIMESTAMP NOT NULL DEFAULT '1970-01-01 00:00:01',   `date_deleted` TIMESTAMP NULL,   `deleted` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',   PRIMARY KEY (`id`),   UNIQUE INDEX `name_UNIQUE` (`name` ASC),   UNIQUE INDEX `acronym_UNIQUE` (`acronym` ASC)) ENGINE = InnoDB;").execute();
-		Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_account` (   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,   `name` VARCHAR(64) NOT NULL,   `uuid` VARCHAR(37) NULL,   `default_currency_id` SMALLINT UNSIGNED NULL DEFAULT NULL,   `date_created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   `date_modified` TIMESTAMP NOT NULL DEFAULT '1970-01-01 00:00:01',   PRIMARY KEY (`id`),   UNIQUE INDEX `name_UNIQUE` (`name` ASC),   UNIQUE INDEX `uuid_UNIQUE` (`uuid` ASC),   INDEX `fk_currencies_account_currencies_currency1_idx` (`default_currency_id` ASC),   CONSTRAINT `fk_currencies_account_currencies_currency1`     FOREIGN KEY (`default_currency_id`)     REFERENCES  `currencies_currency` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
-		Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_unit` (   `id` SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,   `currency_id` SMALLINT UNSIGNED NOT NULL,   `child_unit_id` SMALLINT UNSIGNED NULL,   `name` VARCHAR(32) NOT NULL,   `alternate` VARCHAR(32) NOT NULL,   `symbol` VARCHAR(2) NOT NULL,   `prime` TINYINT(1) UNSIGNED NOT NULL,   `main` TINYINT(1) UNSIGNED NOT NULL,   `child_multiples` INT UNSIGNED NOT NULL,   `base_multiples` INT UNSIGNED NOT NULL,   `date_created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   `date_modified` TIMESTAMP NOT NULL DEFAULT '1970-01-01 00:00:01',   PRIMARY KEY (`id`),   INDEX `fk_currencies_currency_has_currencies_unit_idx` (`currency_id` ASC),   UNIQUE INDEX `name_UNIQUE` (`name` ASC),   UNIQUE INDEX `singular_UNIQUE` (`alternate` ASC),   INDEX `fk_currencies_unit_has_currencies_child_idx` (`child_unit_id` ASC),   CONSTRAINT `fk_currencies_currency_has_currencies_unit`     FOREIGN KEY (`currency_id`)     REFERENCES `currencies_currency` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_unit_has_currencies_child`     FOREIGN KEY (`child_unit_id`)     REFERENCES `currencies_unit` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
-		Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_holding` (   `account_id` INT UNSIGNED NOT NULL,   `unit_id` SMALLINT UNSIGNED NOT NULL,   `amount` BIGINT NOT NULL,   PRIMARY KEY (`account_id`, `unit_id`),   INDEX `fk_currencies_unit_has_currencies_holding_idx` (`unit_id` ASC),   INDEX `fk_currencies_account_has_currencies_holding_idx` (`account_id` ASC),   CONSTRAINT `fk_currencies_account_has_currencies_holding`     FOREIGN KEY (`account_id`)     REFERENCES `currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_unit_has_currencies_holding`     FOREIGN KEY (`unit_id`)     REFERENCES `currencies_unit` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
-		Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_holder` (   `parent_account_id` INT UNSIGNED NOT NULL,   `child_account_id` INT UNSIGNED NOT NULL,   `length` SMALLINT NOT NULL DEFAULT 1,   PRIMARY KEY (`parent_account_id`, `child_account_id`),   INDEX `fk_currencies_account_has_currencies_parent_account_idx` (`parent_account_id` ASC),   INDEX `fk_currencies_account_has_currencies_child_account_idx` (`child_account_id` ASC),   CONSTRAINT `fk_currencies_account_has_currencies_parent_account`     FOREIGN KEY (`parent_account_id`)     REFERENCES `currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_account_has_currencies_child_account`     FOREIGN KEY (`child_account_id`)     REFERENCES `currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
-		Currencies.getInstance().getDatabase().createSqlUpdate("CREATE TABLE IF NOT EXISTS `currencies_transaction` (   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,   `sender_id` INT UNSIGNED NOT NULL,   `recipient_id` INT UNSIGNED NOT NULL,   `unit_id` SMALLINT UNSIGNED NOT NULL,   `type_id` SMALLINT UNSIGNED NOT NULL,   `transaction_amount` BIGINT NOT NULL,   `final_sender_amount` BIGINT NULL DEFAULT NULL,   `final_recipient_amount` BIGINT NULL,   `paid` TINYINT(1) UNSIGNED NULL DEFAULT '1',   `date_paid` TIMESTAMP NULL DEFAULT NULL,   `date_created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   PRIMARY KEY (`id`),   INDEX `fk_currencies_recipient_has_currencies_transaction_idx` (`recipient_id` ASC),   INDEX `fk_currencies_sender_has_currencies_transaction_idx` (`sender_id` ASC),   INDEX `fk_currencies_unit_has_currencies_transaction_idx` (`unit_id` ASC),   CONSTRAINT `fk_currencies_sender_has_currencies_transaction`     FOREIGN KEY (`sender_id`)     REFERENCES `minecraft`.`currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_recipient_has_currencies_transaction`     FOREIGN KEY (`recipient_id`)     REFERENCES `minecraft`.`currencies_account` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION,   CONSTRAINT `fk_currencies_unit_has_currencies_transaction`     FOREIGN KEY (`unit_id`)     REFERENCES `minecraft`.`currencies_unit` (`id`)     ON DELETE NO ACTION     ON UPDATE NO ACTION) ENGINE = InnoDB;").execute();
-		
-		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_account` VALUES (1, 'Minecraft Central Bank', NULL, NULL, NOW(), NOW()), (2, 'Minecraft Central Banker', NULL, NULL, NOW(), NOW()), (3, 'The Enderman Market', NULL, NULL, NOW(), NOW()), (4, 'The Enderman Marketeer', NULL, NULL, NOW(), NOW());").execute();
-		Currencies.getInstance().getDatabase().createSqlUpdate("INSERT IGNORE INTO `currencies_holder` VALUES (1, 1, 0), (2, 2, 0), (3, 3, 0), (4, 4, 0), (2, 1, 1), (4, 3, 1);");
-		
-		System.out.print("[Currencies] Enabled.");
+		getLogger().info(PREFIX + " Enabled.");
 	}
 	
     @Override
 	public void onDisable() {
-		System.out.print("[Currencies] Disabled.");
+    	getLogger().info(PREFIX + " Disabled.");
 	}
 	
 	@Override
