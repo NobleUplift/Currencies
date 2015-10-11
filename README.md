@@ -5,54 +5,54 @@
 ## Commands
 Currencies currently has 17 commands.
 
-#### /currencies create <acronym> <name> [prefix] - Creates a currency
+###### `/currencies create <acronym> <name> [prefix]` - Creates a currency
 * acronym - An acronym is a three-letter unique identifier for every currency created by Currencies. This is true for every occurrence of <acronym>
 * name - You can also use quotes to specify the name of the currency.
 * prefix (default: true) - Prefix controls whether the symbols of the currency will be before their amounts or after. For example, with prefix: $10.50, without prefix: 10$50.
 
-####  /currencies delete <acronym> - Deletes a currency (only partially implemented as of now)
+######  `/currencies delete <acronym>` - Deletes a currency (only partially implemented as of now)
 
-####  /currencies addprime <acronym> <name> <plural> <symbol> - Creates the central unit of the currency. It should be the first unit that comes to mind when you think of this currency.
+######  `/currencies addprime <acronym> <name> <plural> <symbol>` - Creates the central unit of the currency. It should be the first unit that comes to mind when you think of this currency.
 * name - the singular name of the unit of currency, i.e. dollar. Same in the next two commands.
 * plural - the plural name of the unit of currency, i.e. dollars. Same in the next two commands.
 * symbol - the symbol of the unit, i.e. $. Same in the next two commands.
 
-#### /currencies addparent <acronym> <name> <plural> <symbol> <multiplier> <child> - Add a parent unit to a child unit
+###### `/currencies addparent <acronym> <name> <plural> <symbol> <multiplier> <child>` - Add a parent unit to a child unit
 * multiplier - how many multiples of the child equal the parent
 * child - the symbol of the child unit
 
-#### /currencies addchild <acronym> <name> <plural> <symbol> <divisor> <parent> - Add a child unit to a parent unit. Each unit can only have one child.
+###### `/currencies addchild <acronym> <name> <plural> <symbol> <divisor> <parent>` - Add a child unit to a parent unit. Each unit can only have one child.
 * divisor - how many divisions of the parent equal the child
 * parent - the symbol of the parent unit
 
-#### /currencies list [page] - List currencies.
+###### `/currencies list [page]` - List currencies.
 * page (default: 1) - optional parameter to specify the next page of currencies, if you have more than 10.
 
-#### /openaccount | /currencies openaccount <name> <owner> - Open a non-player account 
+###### `/openaccount | /currencies openaccount <name> <owner>` - Open a non-player account 
 * name - Name of the account. Must be greater than 16 characters. Can be defined with quotes, i.e. "Noble Coding Inc.".
 * parent - Owner of the account.
 
-#### /setdefault | /currencies setdefault <acronym> - Sets a player's default currency. Required when a server has multiple currencies with the same prime symbol, the United States Dollar ($) and the Canadian Dollar ($).
+###### `/setdefault | /currencies setdefault <acronym>` - Sets a player's default currency. Required when a server has multiple currencies with the same prime symbol, the United States Dollar ($) and the Canadian Dollar ($).
 
-#### `/balance | /currencies balance [player] [acronym]` - Shows a player's balance.
+###### `/balance | /currencies balance [player] [acronym]` - Shows a player's balance.
 * player (default: you) - When specified, you can see another player's balance.
 * acronym (default: all) - When you only want to see one currency.
 
-#### /pay | /currencies pay <player> <amount> - Pay a player.
+###### `/pay | /currencies pay <player> <amount>` - Pay a player.
 
-#### /bill | /currencies bill <player> <amount> - Bill a player.
+###### `/bill | /currencies bill <player> <amount>` - Bill a player.
 
-#### /paybill | /currencies paybill [transaction] - Pay a bill.
+###### `/paybill | /currencies paybill [transaction]` - Pay a bill.
 
-#### /rejectbill | /currencies rejectbill [transaction] - Reject a bill.
+###### `/rejectbill | /currencies rejectbill [transaction]` - Reject a bill.
 
-#### `/transactions | /currencies transactions [page|player] [page]` - View your transactions.
+###### `/transactions | /currencies transactions [page|player] [page]` - View your transactions.
 
-#### /credit | /currencies credit <player> <amount>` - Give a player money (put money into circulation).
+###### `/credit | /currencies credit <player> <amount>` - Give a player money (put money into circulation).
 
-#### /debit | /currencies debit <player> <amount>` - Take away money from a player (takes money out of circulation).
+###### `/debit | /currencies debit <player> <amount>` - Take away money from a player (takes money out of circulation).
 
-#### `/bankrupt | /currencies bankrupt <player> [acronym] [amount]` - Bankrupt a player. Does not take money out of circulation
+###### `/bankrupt | /currencies bankrupt <player> [acronym] [amount]` - Bankrupt a player. Does not take money out of circulation
 * player - Without any other parameters, will bankrupt a player on all currencies.
 * acronym - the single currency to bankrupt a player on
 * amount - the amount to credit back to the user after bankruptcy (creates money).
