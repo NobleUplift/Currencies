@@ -4,7 +4,7 @@
 
 	<groupId>com.nobleuplift.currencies</groupId>
 	<artifactId>Currencies</artifactId>
-	<version>0.0.1-b056</version>
+	<version>1.0.0-b57</version>
 	<packaging>jar</packaging>
 
 	<name>Currencies</name>
@@ -12,8 +12,10 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<plugin.description>Multiple currencies, complex subdivisions, exact integers.</plugin.description>
+		
 		<plugin.author>NobleUplift</plugin.author>
-		<plugin.website>https://nobleuplift.wordpress.com/</plugin.website>
+		<plugin.website>http://dev.bukkit.org/bukkit-plugins/currencies/</plugin.website>
 		<plugin.main>com.nobleuplift.currencies.Currencies</plugin.main>
 		
 		<currencies.create>/currencies create &lt;acronym&gt; &lt;name&gt; [prefix]</currencies.create>
@@ -132,14 +134,14 @@
 		        </includes>
 			</resource>
 		</resources>
-		<sourceDirectory>target/filtered-sources/java</sourceDirectory>
+		<sourceDirectory>src/main/java</sourceDirectory>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>8</source>
-					<target>8</target>
+					<source>1.7</source>
+					<target>1.7</target>
 					<encoding>${project.build.sourceEncoding}</encoding>
 				</configuration>
 			</plugin>
