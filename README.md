@@ -5,37 +5,53 @@
 ## Commands
 Currencies currently has 17 commands.
 
-#### `/currencies create <acronym> <name> [prefix]` - Creates a currency
+#### /currencies create <acronym> <name> [prefix] - Creates a currency
 * acronym - An acronym is a three-letter unique identifier for every currency created by Currencies. This is true for every occurrence of <acronym>
 * name - You can also use quotes to specify the name of the currency.
 * prefix (default: true) - Prefix controls whether the symbols of the currency will be before their amounts or after. For example, with prefix: $10.50, without prefix: 10$50.
-####  `/currencies delete <acronym>` - Deletes a currency (only partially implemented as of now)
-####  `/currencies addprime <acronym> <name> <plural> <symbol>` - Creates the central unit of the currency. It should be the first unit that comes to mind when you think of this currency.
+
+####  /currencies delete <acronym> - Deletes a currency (only partially implemented as of now)
+
+####  /currencies addprime <acronym> <name> <plural> <symbol> - Creates the central unit of the currency. It should be the first unit that comes to mind when you think of this currency.
 * name - the singular name of the unit of currency, i.e. dollar. Same in the next two commands.
 * plural - the plural name of the unit of currency, i.e. dollars. Same in the next two commands.
 * symbol - the symbol of the unit, i.e. $. Same in the next two commands.
-#### `/currencies addparent <acronym> <name> <plural> <symbol> <multiplier> <child>` - Add a parent unit to a child unit
+
+#### /currencies addparent <acronym> <name> <plural> <symbol> <multiplier> <child> - Add a parent unit to a child unit
 * multiplier - how many multiples of the child equal the parent
 * child - the symbol of the child unit
-#### `/currencies addchild <acronym> <name> <plural> <symbol> <divisor> <parent>` - Add a child unit to a parent unit. Each unit can only have one child.
+
+#### /currencies addchild <acronym> <name> <plural> <symbol> <divisor> <parent> - Add a child unit to a parent unit. Each unit can only have one child.
 * divisor - how many divisions of the parent equal the child
 * parent - the symbol of the parent unit
-#### `/currencies list [page]` - List currencies.
+
+#### /currencies list [page] - List currencies.
 * page (default: 1) - optional parameter to specify the next page of currencies, if you have more than 10.
-#### `/openaccount | /currencies openaccount <name> <owner>` - Open a non-player account 
+
+#### /openaccount | /currencies openaccount <name> <owner> - Open a non-player account 
 * name - Name of the account. Must be greater than 16 characters. Can be defined with quotes, i.e. "Noble Coding Inc.".
 * parent - Owner of the account.
-#### `/setdefault | /currencies setdefault <acronym>` - Sets a player's default currency. Required when a server has multiple currencies with the same prime symbol, the United States Dollar ($) and the Canadian Dollar ($).
+
+#### /setdefault | /currencies setdefault <acronym> - Sets a player's default currency. Required when a server has multiple currencies with the same prime symbol, the United States Dollar ($) and the Canadian Dollar ($).
+
 #### `/balance | /currencies balance [player] [acronym]` - Shows a player's balance.
 * player (default: you) - When specified, you can see another player's balance.
 * acronym (default: all) - When you only want to see one currency.
+
 #### /pay | /currencies pay <player> <amount> - Pay a player.
+
 #### /bill | /currencies bill <player> <amount> - Bill a player.
-#### `/paybill | /currencies paybill [transaction]` - Pay a bill.
-#### `/rejectbill | /currencies rejectbill [transaction]` - Reject a bill.
+
+#### /paybill | /currencies paybill [transaction] - Pay a bill.
+
+#### /rejectbill | /currencies rejectbill [transaction] - Reject a bill.
+
 #### `/transactions | /currencies transactions [page|player] [page]` - View your transactions.
-#### `/credit | /currencies credit <player> <amount>` - Give a player money (put money into circulation).
-#### `/debit | /currencies debit <player> <amount>` - Take away money from a player (takes money out of circulation).
+
+#### /credit | /currencies credit <player> <amount>` - Give a player money (put money into circulation).
+
+#### /debit | /currencies debit <player> <amount>` - Take away money from a player (takes money out of circulation).
+
 #### `/bankrupt | /currencies bankrupt <player> [acronym] [amount]` - Bankrupt a player. Does not take money out of circulation
 * player - Without any other parameters, will bankrupt a player on all currencies.
 * acronym - the single currency to bankrupt a player on
@@ -72,34 +88,38 @@ _For a complete list of non-decimal currencies, ![please see the page on the wik
 
 Want to create a simple decimalized currency? USA! USA!
 
-`/currencies create USD "United States Dollar"`
-`/currencies addprime USD dollar dollars $`
-`/currencies addchild USD cent cents . 100 $`
+```
+/currencies create USD 'United States Dollar'
+/currencies addprime USD dollar dollars $
+/currencies addchild USD cent cents . 100 $
+```
 
 So, if you wanted to create the old Great British Pound before decimalization (yeah, American spelling!), you would do the following (during development I actually was using £, but I can't type it on my keyboard in Minecraft, even with ALT codes, so I started using L. Don't hate):
 
-`/currencies create GBP "Great British Pound" false`
-`/currencies addprime GBP pound pounds L`
-`/currencies addchild GBP shilling shillings s 20 L`
-`/currencies addchild GBP penny pence d 12 s`
-`/currencies addchild GBP farthing farthings f 4 d`
+```
+/currencies create GBP 'Great British Pound' false
+/currencies addprime GBP pound pounds L
+/currencies addchild GBP shilling shillings s 20 L
+/currencies addchild GBP penny pence d 12 s
+/currencies addchild GBP farthing farthings f 4 d
 
-`// Swap last two parameters `
-`/currencies addparent GBP 'guinea' 'guinea' gu 21 s`
-`/currencies addparent GBP crown crowns c 5 s`
-`/currencies addparent GBP 'double florin' 'double florin' df 4 s`
-`/currencies addparent GBP florin florins fl 2 s`
+// Swap last two parameters
+/currencies addparent GBP 'guinea' 'guinea' gu 21 s
+/currencies addparent GBP crown crowns c 5 s
+/currencies addparent GBP 'double florin' 'double florin' df 4 s
+/currencies addparent GBP florin florins fl 2 s
 
-`/currencies addparent GBP 'half guinea' 'half guinea' gh 126 d`
-`/currencies addparent GBP halfcrown halfcrowns hc 30 d`
-`/currencies addparent GBP sixpence sixpence sp 6 d`
-`/currencies addparent GBP threepence threepence tp 3 d`
-`/currencies addparent GBP twopence twopence wp 3 d`
-`/currencies addparent GBP groat groats g 4 d`
-`/currencies addparent GBP halfgroat halfgroats hg 2 d`
+/currencies addparent GBP 'half guinea' 'half guinea' gh 126 d
+/currencies addparent GBP halfcrown halfcrowns hc 30 d
+/currencies addparent GBP sixpence sixpence sp 6 d
+/currencies addparent GBP threepence threepence tp 3 d
+/currencies addparent GBP twopence twopence wp 3 d
+/currencies addparent GBP groat groats g 4 d
+/currencies addparent GBP halfgroat halfgroats hg 2 d
 
-`/currencies addparent GBP 'three halfpence' 'three halfpence' th 6 f`
-`/currencies addparent GBP halfpenny halfpence hp 2 f`
+/currencies addparent GBP 'three halfpence' 'three halfpence' th 6 f
+/currencies addparent GBP halfpenny halfpence hp 2 f
+```
 
 ![Great British Pound](http://i.imgur.com/7128fra.png)
 
