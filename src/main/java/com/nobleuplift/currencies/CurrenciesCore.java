@@ -596,7 +596,7 @@ public final class CurrenciesCore {
 			}
 			
 			if (account.getId() != t.getSender().getId()) {
-				throw new CurrenciesException("You can only pay/reject bills for which you are the recipient.");
+				throw new CurrenciesException("You can only pay/reject bills sent to yourself.");
 			}
 		}
 		
@@ -653,7 +653,7 @@ public final class CurrenciesCore {
 	
 	@Transactional
 	public static Transaction credit(String player, String acronym, String amount) throws CurrenciesException {
-		Account banker = getMinecraftCentralBanker();
+		Account bank = getMinecraftCentralBank();
 		Account account = getAccountFromPlayer(player, true);
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long addAmount = parseCurrency(currency, amount);
@@ -666,7 +666,7 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Cannot credit someone a negative amount.");
 		}
 		
-		Transaction t = transferAmount(banker, account, currency, addAmount);
+		Transaction t = transferAmount(bank, account, currency, addAmount);
 		t.setTypeId(TRANSACTION_TYPE_CREDIT_ID);
 		Currencies.getInstance().getDatabase().save(t);
 		return t;
@@ -675,7 +675,7 @@ public final class CurrenciesCore {
 	@Transactional
 	public static Transaction debit(String player, String acronym, String amount) throws CurrenciesException {
 		Account account = getAccountFromPlayer(player, true);
-		Account banker = getMinecraftCentralBanker();
+		Account bank = getMinecraftCentralBank();
 		Currency currency = getCurrencyFromAcronym(acronym, true);
 		long removeAmount = parseCurrency(currency, amount);
 		
@@ -687,7 +687,7 @@ public final class CurrenciesCore {
 			throw new CurrenciesException("Cannot debit someone a negative amount.");
 		}
 		
-		Transaction t = transferAmount(account, banker, currency, removeAmount);
+		Transaction t = transferAmount(account, bank, currency, removeAmount);
 		t.setTypeId(TRANSACTION_TYPE_DEBIT_ID);
 		Currencies.getInstance().getDatabase().save(t);
 		return t;
@@ -728,14 +728,14 @@ public final class CurrenciesCore {
 					continue;
 				}
 				
-				Transaction t = transferAmount(account, centralBank, currency, h.getAmount());
+				Transaction t = transferAmount(account, centralBanker, currency, h.getAmount());
 				t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
 				Currencies.getInstance().getDatabase().save(t);
 			}
 			
 			//Currencies.getInstance().getDatabase().delete(holdings);
 			
-			Transaction t = transferAmount(centralBanker, account, currency, bankruptAmount);
+			Transaction t = transferAmount(centralBank, account, currency, bankruptAmount);
 			t.setTypeId(TRANSACTION_TYPE_CREDIT_ID);
 			Currencies.getInstance().getDatabase().save(t);
 			
@@ -763,7 +763,7 @@ public final class CurrenciesCore {
 					continue;
 				}
 				
-				Transaction t = transferAmount(account, centralBank, currency, h.getAmount());
+				Transaction t = transferAmount(account, centralBanker, currency, h.getAmount());
 				t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
 				Currencies.getInstance().getDatabase().save(t);
 			}
@@ -782,7 +782,7 @@ public final class CurrenciesCore {
 					continue;
 				}
 				
-				Transaction t = transferAmount(account, centralBank, h.getUnit().getCurrency(), h.getAmount());
+				Transaction t = transferAmount(account, centralBanker, h.getUnit().getCurrency(), h.getAmount());
 				t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
 				Currencies.getInstance().getDatabase().save(t);
 			}
