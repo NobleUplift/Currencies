@@ -228,7 +228,6 @@ public final class CurrenciesCore {
 		parentUnit.setAlternate(plural);
 		parentUnit.setSymbol(symbol);
 		parentUnit.setPrime(false);
-		//u.setBase(false);
 		parentUnit.setChildMultiples(multiplier);
 		parentUnit.setBaseMultiples(multiples);
 		parentUnit.setDateCreated(new Timestamp(Calendar.getInstance().getTimeInMillis()));
@@ -819,22 +818,44 @@ public final class CurrenciesCore {
 			.where().eq("id", CurrenciesCore.THE_ENDERMAN_MARKETEER).findUnique();
 	}
 	
-	public static Account getAccountFromPlayer(String player, boolean exception) throws CurrenciesException {
+	public static Account getAccountFromPlayer(String player, boolean exception) throws CurrenciesRuntimeException {
 		Account account = Currencies.getInstance().getDatabase().find(Account.class)
 			.where().eq("name", player).findUnique();
 		if (account == null && exception) {
-			throw new CurrenciesException("Account " + player + " does not exist.");
+			throw new CurrenciesRuntimeException("Account " + player + " does not exist.");
 		}
 		return account;
 	}
 	
-	public static Currency getCurrencyFromAcronym(String acronym, boolean exception) throws CurrenciesException {
+	public static Currency getCurrency(short id, boolean exception) throws CurrenciesRuntimeException {
+		Currency currency = Currencies.getInstance().getDatabase().find(Currency.class)
+			.where()
+			.eq("id", id)
+			.findUnique();
+		if (currency == null && exception) {
+			throw new CurrenciesRuntimeException("Currency with ID " + id + " does not exist.");
+		}
+		return currency;
+	}
+	
+	public static Currency getCurrencyFromAcronym(String acronym, boolean exception) throws CurrenciesRuntimeException {
 		Currency currency = Currencies.getInstance().getDatabase().find(Currency.class)
 			.where().eq("acronym", acronym).findUnique();
 		if (currency == null && exception) {
-			throw new CurrenciesException("Currency " + acronym + " does not exist.");
+			throw new CurrenciesRuntimeException("Currency " + acronym + " does not exist.");
 		}
 		return currency;
+	}
+	
+	public static Unit getUnit(short id) throws CurrenciesException {
+		Unit unit = Currencies.getInstance().getDatabase().find(Unit.class)
+			.where()
+			.eq("id", id)
+			.findUnique();
+		if (unit == null) {
+			throw new CurrenciesException("Unit with ID " + id + " does not exist.");
+		}
+		return unit;
 	}
 	
 	public static Unit getBaseUnit(Currency currency) {
@@ -898,6 +919,9 @@ public final class CurrenciesCore {
 	}
 	
 	private static int compactHoldings(Account account) {
+		/*
+		 * Check to see if the account has any non-base holdings
+		 */
 		List<Holding> nonBaseHoldings = Currencies.getInstance().getDatabase().find(Holding.class)
 			.where()
 			.eq("account", account)
@@ -907,11 +931,17 @@ public final class CurrenciesCore {
 			System.out.println("Non-base holdings: " + nonBaseHoldings);
 		}
 		
+		/*
+		 * If non-base holdings are detected, we have to compact them
+		 */
 		if (nonBaseHoldings.size() != 0) {
 			if (Currencies.DEBUG) {
 				System.out.println("Non-base holdings count: " + nonBaseHoldings.size());
 			}
 			
+			/*
+			 * Get all base holdings that will be incremented
+			 */
 			List<Holding> baseHoldings = Currencies.getInstance().getDatabase().find(Holding.class)
 				.where()
 				.eq("account", account)
@@ -921,12 +951,19 @@ public final class CurrenciesCore {
 				System.out.println("Base holdings: " + nonBaseHoldings);
 			}
 			
+			/*
+			 * Sort base holdings by currency
+			 */
 			Map<Currency, Holding> holdingsByCurrency = new HashMap<>();
 			for (Holding h : baseHoldings) {
 				Currency c = h.getUnit().getCurrency();
 				holdingsByCurrency.put(c, h);
 			}
 			
+			/*
+			 * For each of the non-base holdings, add it to the base holding,
+			 * save the base, and then delete.
+			 */
 			for (Holding h : nonBaseHoldings) {
 				if (h.getAmount() == 0) {
 					Currencies.getInstance().getDatabase().delete(h);
