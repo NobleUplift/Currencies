@@ -66,7 +66,7 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.createCurrency(args[1], args[2]);
 						Currencies.tell(sender, "Currency " + args[2] + " (" + args[1] + ") created.");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 4) {
@@ -74,7 +74,7 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.createCurrency(args[1], args[2], prefix);
 						Currencies.tell(sender, "Currency " + args[2] + " (" + args[1] + ") created " + (prefix ? "with prefix" : "without prefix") + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -87,7 +87,7 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.deleteCurrency(args[1]);
 						Currencies.tell(sender, "Currency " + args[1] + " deleted.");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -100,7 +100,7 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.addPrime(args[1], args[2], args[3], args[4]);
 						Currencies.tell(sender, "Unit " + args[2] + "/" + args[3] + " (" + args[4] + ") in " + args[1] + " created.");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -116,7 +116,7 @@ public final class CurrenciesCommand {
 							"1 " + args[4] + " equals " + Integer.parseInt(args[5]) + " " + args[6] + ".");
 					} catch (NumberFormatException e) {
 						Currencies.tell(sender, "Multiplier must be an integer.");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -132,7 +132,7 @@ public final class CurrenciesCommand {
 							Integer.parseInt(args[5]) + " " + args[4] + " equals 1 " + args[6] + ".");
 					} catch (NumberFormatException e) {
 						Currencies.tell(sender, "Divisor must be an integer.");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -169,7 +169,7 @@ public final class CurrenciesCommand {
 							}
 						}
 						Currencies.tell(sender, "--------------------");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -182,7 +182,7 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.openAccount(args[1], args[2]);
 						Currencies.tell(sender, "Created new account " + args[1] + " owned by " + args[2] + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -195,7 +195,7 @@ public final class CurrenciesCommand {
 					try {
 						CurrenciesCore.setDefault(sender.getName(), args[1]);
 						Currencies.tell(sender, "Your default currency is now " + args[1] + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -213,7 +213,7 @@ public final class CurrenciesCommand {
 							Currencies.tell(sender, entry.getKey().getName() + ": " + CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
 						}
 						Currencies.tell(sender, "--------------------");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 2) {
@@ -225,7 +225,7 @@ public final class CurrenciesCommand {
 							Currencies.tell(sender, entry.getKey().getName() + ": " + CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
 						}
 						Currencies.tell(sender, "--------------------");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 3) {
@@ -237,7 +237,7 @@ public final class CurrenciesCommand {
 							Currencies.tell(sender, entry.getKey().getName() + ": " + CurrenciesCore.formatCurrency(entry.getKey(), entry.getValue()));
 						}
 						Currencies.tell(sender, "--------------------");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -252,7 +252,7 @@ public final class CurrenciesCommand {
 						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
 						CurrenciesCore.pay(sender.getName(), args[1], currency.getAcronym(), args[2]);
 						Currencies.tell(sender, "Paid " + args[1] + " " + args[2] + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -267,7 +267,7 @@ public final class CurrenciesCommand {
 						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
 						CurrenciesCore.bill(sender.getName(), args[1], currency.getAcronym(), args[2]);
 						Currencies.tell(sender, "Sent " + args[1] + " a bill for " + args[2] + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -280,14 +280,14 @@ public final class CurrenciesCommand {
 					try {
 						Transaction t = CurrenciesCore.processBill(sender.getName(), true);
 						Currencies.tell(sender, "Paid transaction " + t.getId() + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 2) {
 					try {
 						Transaction t = CurrenciesCore.processBill(sender.getName(), true, args[1]);
 						Currencies.tell(sender, "Paid transaction " + t.getId() + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -300,14 +300,14 @@ public final class CurrenciesCommand {
 					try {
 						Transaction t = CurrenciesCore.processBill(sender.getName(), false);
 						Currencies.tell(sender, "Rejected transaction " + t.getId() + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 2) {
 					try {
 						Transaction t = CurrenciesCore.processBill(sender.getName(), false, args[1]);
 						Currencies.tell(sender, "Rejected transaction " + t.getId() + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -367,7 +367,7 @@ public final class CurrenciesCommand {
 							}
 						}
 						Currencies.tell(sender, "--------------------");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -382,7 +382,7 @@ public final class CurrenciesCommand {
 						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
 						CurrenciesCore.credit(args[1], currency.getAcronym(), args[2]);
 						Currencies.tell(sender, "You have credited " + args[2] + " to " + args[1] + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -397,7 +397,7 @@ public final class CurrenciesCommand {
 						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
 						CurrenciesCore.debit(args[1], currency.getAcronym(), args[2]);
 						Currencies.tell(sender, "You have debited " + args[2] + " from " + args[1] + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
@@ -414,14 +414,14 @@ public final class CurrenciesCommand {
 						
 						CurrenciesCore.bankrupt(args[1]);
 						Currencies.tell(sender, "Account " + args[1] + " has bankrupted on all currencies.");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 3) {
 					try {
 						CurrenciesCore.bankrupt(args[1], args[2]);
 						Currencies.tell(sender, "Account " + args[1] + " has bankrupted on currency " + args[2] + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else if (args.length == 4) {
@@ -432,7 +432,7 @@ public final class CurrenciesCommand {
 						
 						CurrenciesCore.bankrupt(args[1], args[2], args[3]);
 						Currencies.tell(sender, "Account " + args[1] + " has bankrupted on currency " + args[2] + " but has been given a starting balance of " + args[3] + ".");
-					} catch (CurrenciesException e) {
+					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
 					}
 				} else {
