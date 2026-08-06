@@ -4,7 +4,7 @@
 
 	<groupId>com.nobleuplift.currencies</groupId>
 	<artifactId>Currencies</artifactId>
-	<version>1.1.0-b061</version>
+	<version>1.1.0-b063</version>
 	<packaging>jar</packaging>
 
 	<name>Currencies</name>
@@ -13,11 +13,11 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<plugin.description>Multiple currencies, complex subdivisions, exact integers.</plugin.description>
-		
+
 		<plugin.author>NobleUplift</plugin.author>
 		<plugin.website>http://dev.bukkit.org/bukkit-plugins/currencies/</plugin.website>
 		<plugin.main>com.nobleuplift.currencies.Currencies</plugin.main>
-		
+
 		<currencies.create>/currencies create &lt;acronym&gt; &lt;name&gt; [prefix]</currencies.create>
 		<currencies.delete>/currencies delete &lt;acronym&gt;</currencies.delete>
 		<currencies.addprime>/currencies addprime &lt;acronym&gt; &lt;name&gt; &lt;plural&gt; &lt;symbol&gt;</currencies.addprime>
@@ -35,68 +35,31 @@
 		<currencies.credit>/currencies credit &lt;player&gt; &lt;amount&gt;</currencies.credit>
 		<currencies.debit>/currencies debit &lt;player&gt; &lt;amount&gt;</currencies.debit>
 		<currencies.bankrupt>/currencies bankrupt &lt;player&gt; [acronym] [amount]</currencies.bankrupt>
-		
-		<ebean.version>3.3.1</ebean.version>
 	</properties>
-	
+
 	<repositories>
 		<repository>
-			<id>spigot-repo</id>
-			<url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
-		</repository><repository>
-			<id>vault-repo</id>
-			<url>http://nexus.theyeticave.net/content/repositories/pub_releases</url>
-		</repository>
-		<repository>
-			<id>sk89q-repo</id>
-			<url>http://maven.sk89q.com/repo/</url>
-		</repository>
-		<repository>
-			<id>avaje.org</id>
-			<url>http://www.avaje.org/archiva/repository/internal</url>
-		</repository>
-		<repository>
-			<id>oss.sonatype.org</id>
-			<name>OSS Sonatype Staging</name>
-			<url>https://oss.sonatype.org/content/groups/staging</url>
+			<id>papermc</id>
+			<url>https://repo.papermc.io/repository/maven-public/</url>
 		</repository>
 	</repositories>
 
 	<dependencies>
 		<dependency>
-		  <groupId>org.spigotmc</groupId>
-		  <artifactId>spigot-api</artifactId>
-		  <version>1.8-R0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.bukkit</groupId>
-			<artifactId>bukkit</artifactId>
-			<version>1.8-R0.1-SNAPSHOT</version>
-			<type>jar</type>
+			<groupId>io.papermc.paper</groupId>
+			<artifactId>paper-api</artifactId>
+			<version>1.21-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>net.milkbowl.vault</groupId>
-			<artifactId>Vault</artifactId>
-			<version>1.5.4</version>
-			<type>jar</type>
+			<groupId>com.zaxxer</groupId>
+			<artifactId>HikariCP</artifactId>
+			<version>5.1.0</version>
 		</dependency>
 		<dependency>
-			<groupId>com.sk89q</groupId>
-			<artifactId>worldedit</artifactId>
-			<version>5.5.7-SNAPSHOT</version>
-			<type>jar</type>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
-			<version>5.1.35</version>
-		</dependency>
-		<dependency>  
-			<groupId>org.avaje.ebeanorm</groupId>  
-			<artifactId>avaje-ebeanorm</artifactId>  
-			<version>3.3.1</version>  
+			<groupId>com.mysql</groupId>
+			<artifactId>mysql-connector-j</artifactId>
+			<version>8.4.0</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -104,18 +67,8 @@
 			<version>3.8.1</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.eclipse.persistence</groupId>
-			<artifactId>eclipselink</artifactId>
-			<version>2.5.0-RC1</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.eclipse.persistence</groupId>
-					<artifactId>commonj.sdo</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
 	</dependencies>
+
 	<build>
 		<resources>
 			<resource>
@@ -140,8 +93,8 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>17</source>
+					<target>17</target>
 					<encoding>${project.build.sourceEncoding}</encoding>
 				</configuration>
 			</plugin>
@@ -151,31 +104,38 @@
 				<configuration>
 					<useSystemClassLoader>false</useSystemClassLoader>
 				</configuration>
-			</plugin>			
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-antrun-plugin</artifactId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.5.0</version>
 				<executions>
 					<execution>
-						<id>compile</id>
-						<phase>process-ebean-enhancement</phase>
-						<configuration>
-							<tasks>
-								<property name="compile_classpath" refid="maven.compile.classpath" />
-								<echo
-									message="Ebean enhancing test classes debug level -----------------------------------" />
-								<echo message="Classpath: ${compile_classpath}" />
-								<taskdef name="ebeanEnhance"
-									classname="com.avaje.ebean.enhance.ant.AntEnhanceTask"
-									classpath="${compile_classpath}" />
-								<ebeanEnhance classSource="${project.build.testOutputDirectory}"
-									packages="com.nobleuplift.currencies.entities.**" transformArgs="debug=1" />
-							</tasks>
-							<encoding>UTF-8</encoding>
-						</configuration>
+						<phase>package</phase>
 						<goals>
-							<goal>run</goal>
+							<goal>shade</goal>
 						</goals>
+						<configuration>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
+							<relocations>
+								<relocation>
+									<pattern>com.zaxxer.hikari</pattern>
+									<shadedPattern>com.nobleuplift.currencies.libs.hikari</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.mysql</pattern>
+									<shadedPattern>com.nobleuplift.currencies.libs.mysql</shadedPattern>
+								</relocation>
+							</relocations>
+							<artifactSet>
+								<excludes>
+									<exclude>org.slf4j:*</exclude>
+								</excludes>
+							</artifactSet>
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+							</transformers>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
@@ -184,20 +144,6 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>2.3.2</version>
 				<configuration>
-					<showDeprecation>true</showDeprecation>
-					<showWarnings>true</showWarnings>
-					<executable>${env.JAVA_HOME_7}/bin/javac</executable>
-					<fork>true</fork>
-					<includes>
-						<include>**/*/*.class</include>
-						<include>config.yml</include>
-						<include>plugin.yml</include>
-					</includes>
-					<excludes>
-						<exclude>**/*/*.java</exclude>
-						<exclude>.gitattributes</exclude>
-						<exclude>.gitignore</exclude>
-					</excludes>
 					<archive>
 						<addMavenDescriptor>false</addMavenDescriptor>
 					</archive>
