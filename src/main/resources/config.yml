@@ -1,2 +1,9 @@
 version: new
 debug: false
+
+database:
+  host: localhost
+  port: 3306
+  name: minecraft
+  username: root
+  password: ""
