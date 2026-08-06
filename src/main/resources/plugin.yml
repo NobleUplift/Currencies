@@ -6,7 +6,6 @@ author: ${plugin.author}
 website: ${plugin.website}
 
 main: ${plugin.main}
-database: true
 
 commands:
     currencies:
