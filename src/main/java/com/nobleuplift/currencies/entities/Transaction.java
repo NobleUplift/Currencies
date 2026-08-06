@@ -1,60 +1,22 @@
 package com.nobleuplift.currencies.entities;
 
 import java.io.Serializable;
-
-import javax.persistence.*;
-
 import java.sql.Timestamp;
 
-
-/**
- * The persistent class for the currencies_transaction database table.
- * 
- */
-@Entity
-@Table(name="currencies_transaction")
-@NamedQuery(name="Transaction.findAll", query="SELECT t FROM Transaction t")
 public class Transaction implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
-	@Column(unique=true, nullable=false)
 	private Long id;
-
-	@Column(name="date_created", nullable=false)
 	private Timestamp dateCreated;
-
-	@Column(name="date_paid")
 	private Timestamp datePaid;
-
-	@Column(name="final_recipient_amount")
 	private Long finalRecipientAmount;
-
-	@Column(name="final_sender_amount")
 	private Long finalSenderAmount;
-
 	private Boolean paid;
-
-	@Column(name="transaction_amount", nullable=false)
 	private Long transactionAmount;
-
-	@Column(name="type_id", nullable=false)
 	private Short typeId;
 
-	//bi-directional many-to-one association to Account
-	@ManyToOne
-	@JoinColumn(name="recipient_id", nullable=false)
 	private Account recipient;
-
-	//bi-directional many-to-one association to Account
-	@ManyToOne
-	@JoinColumn(name="sender_id", nullable=false)
 	private Account sender;
-
-	//bi-directional many-to-one association to Unit
-	@ManyToOne
-	@JoinColumn(name="unit_id", nullable=false)
 	private Unit unit;
 
 	public Transaction() {
@@ -99,7 +61,7 @@ public class Transaction implements Serializable {
 	public void setFinalSenderAmount(Long finalSenderAmount) {
 		this.finalSenderAmount = finalSenderAmount;
 	}
-	
+
 	public Boolean isPaid() {
 		return this.paid;
 	}
@@ -158,8 +120,7 @@ public class Transaction implements Serializable {
 				+ ", datePaid=" + datePaid + ", finalRecipientAmount="
 				+ finalRecipientAmount + ", finalSenderAmount="
 				+ finalSenderAmount + ", paid=" + paid + ", transactionAmount="
-				+ transactionAmount + ", typeId=" + typeId + ", recipient="
-				+ recipient + ", sender=" + sender + ", unit=" + unit + "]";
+				+ transactionAmount + ", typeId=" + typeId + "]";
 	}
 
 	@Override
