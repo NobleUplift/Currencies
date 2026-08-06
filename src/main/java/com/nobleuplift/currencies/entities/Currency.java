@@ -1,53 +1,23 @@
 package com.nobleuplift.currencies.entities;
 
 import java.io.Serializable;
-import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.List;
 
-
-/**
- * The persistent class for the currencies_currency database table.
- * 
- */
-@Entity
-@Table(name="currencies_currency")
-@NamedQuery(name="Currency.findAll", query="SELECT c FROM Currency c")
 public class Currency implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
-	@Column(updatable=false, unique=true, nullable=false)
 	private Short id;
-
-	@Column(nullable=false, length=3)
 	private String acronym;
-
-	@Column(name="date_created", nullable=false)
 	private Timestamp dateCreated;
-
-	@Column(name="date_deleted")
 	private Timestamp dateDeleted;
-
-	@Column(name="date_modified", nullable=false)
 	private Timestamp dateModified;
-
-	@Column(nullable=false)
 	private boolean deleted;
-
-	@Column(nullable=false, length=64)
 	private String name;
-
-	@Column(nullable=false)
 	private boolean prefix;
+	private boolean globalDefault;
 
-	//bi-directional many-to-one association to Account
-	@OneToMany(mappedBy="defaultCurrency")
 	private List<Account> accountDefaults;
-
-	//bi-directional many-to-one association to Unit
-	@OneToMany(mappedBy="currency")
 	private List<Unit> units;
 
 	public Currency() {
@@ -92,7 +62,7 @@ public class Currency implements Serializable {
 	public void setDateModified(Timestamp dateModified) {
 		this.dateModified = dateModified;
 	}
-	
+
 	public boolean isDeleted() {
 		return this.deleted;
 	}
@@ -112,7 +82,7 @@ public class Currency implements Serializable {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 	public boolean isPrefix() {
 		return this.prefix;
 	}
@@ -123,6 +93,18 @@ public class Currency implements Serializable {
 
 	public void setPrefix(boolean prefix) {
 		this.prefix = prefix;
+	}
+
+	public boolean isGlobalDefault() {
+		return globalDefault;
+	}
+
+	public boolean getGlobalDefault() {
+		return globalDefault;
+	}
+
+	public void setGlobalDefault(boolean globalDefault) {
+		this.globalDefault = globalDefault;
 	}
 
 	public List<Account> getAccountDefaults() {
@@ -136,14 +118,12 @@ public class Currency implements Serializable {
 	public Account addAccountDefault(Account accountDefault) {
 		getAccountDefaults().add(accountDefault);
 		accountDefault.setDefaultCurrency(this);
-
 		return accountDefault;
 	}
 
 	public Account removeAccountDefault(Account accountDefault) {
 		getAccountDefaults().remove(accountDefault);
 		accountDefault.setDefaultCurrency(null);
-
 		return accountDefault;
 	}
 
@@ -158,25 +138,19 @@ public class Currency implements Serializable {
 	public Unit addUnit(Unit unit) {
 		getUnits().add(unit);
 		unit.setCurrency(this);
-
 		return unit;
 	}
 
 	public Unit removeUnit(Unit unit) {
 		getUnits().remove(unit);
 		unit.setCurrency(null);
-
 		return unit;
 	}
 
 	@Override
 	public String toString() {
-		return "Currency [id=" + id + ", acronym=" + acronym + ", dateCreated="
-				+ dateCreated + ", dateDeleted=" + dateDeleted
-				+ ", dateModified=" + dateModified + ", deleted=" + deleted
-				+ ", name=" + name + ", prefix=" + prefix
-				+ ", accountDefaults=" + accountDefaults + ", units=" + units
-				+ "]";
+		return "Currency [id=" + id + ", acronym=" + acronym + ", name=" + name
+				+ ", prefix=" + prefix + ", deleted=" + deleted + "]";
 	}
 
 	@Override

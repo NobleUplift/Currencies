@@ -2,33 +2,12 @@ package com.nobleuplift.currencies.entities;
 
 import java.io.Serializable;
 
-import javax.persistence.*;
-
-
-/**
- * The persistent class for the currencies_holder database table.
- * 
- */
-@Entity
-@Table(name="currencies_holder")
-@NamedQuery(name="Holder.findAll", query="SELECT h FROM Holder h")
 public class Holder implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-	@EmbeddedId
 	private HolderPK id;
-
-	@Column(nullable=false)
 	private short length;
-
-	//bi-directional many-to-one association to Account
-	@ManyToOne
-	@JoinColumn(name="child_account_id", nullable=false, insertable=false, updatable=false)
 	private Account childAccount;
-
-	//bi-directional many-to-one association to Account
-	@ManyToOne
-	@JoinColumn(name="parent_account_id", nullable=false, insertable=false, updatable=false)
 	private Account parentAccount;
 
 	public Holder() {
