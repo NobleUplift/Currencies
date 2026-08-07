@@ -930,9 +930,6 @@ public final class CurrenciesCore {
 
                 conn.commit();
                 return result;
-            } catch (CurrenciesException e) {
-                conn.rollback();
-                throw e;
             } catch (SQLException e) {
                 conn.rollback();
                 throw new CurrenciesRuntimeException("Database error in transactions: " + e.getMessage());
