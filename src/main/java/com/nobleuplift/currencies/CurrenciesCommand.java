@@ -252,9 +252,10 @@ public final class CurrenciesCommand {
 			case "pay":
 				if (args.length == 3) {
 					try {
-						Account account = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
-						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
-						CurrenciesCore.pay(sender.getName(), args[1], currency.getAcronym(), args[2]);
+						Account fromAccount = CurrenciesCore.getAccountFromPlayer(sender.getName(), true);
+						Account toAccount = CurrenciesCore.getAccountFromPlayer(args[1], true);
+						CurrencyDTO dto = CurrenciesCore.resolveCurrency(fromAccount, args[2]);
+						CurrenciesCore.pay(fromAccount, toAccount, dto.getCurrency(), dto.getBaseAmount());
 						Currencies.tell(sender, "Paid " + args[1] + " " + args[2] + ".");
 					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
@@ -267,9 +268,10 @@ public final class CurrenciesCommand {
 			case "bill":
 				if (args.length == 3) {
 					try {
-						Account account = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
-						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
-						CurrenciesCore.bill(sender.getName(), args[1], currency.getAcronym(), args[2]);
+						Account senderAccount = CurrenciesCore.getAccountFromPlayer(sender.getName(), true);
+						Account billedAccount = CurrenciesCore.getAccountFromPlayer(args[1], true);
+						CurrencyDTO dto = CurrenciesCore.resolveCurrency(senderAccount, args[2]);
+						CurrenciesCore.bill(senderAccount, billedAccount, dto.getCurrency(), dto.getBaseAmount());
 						Currencies.tell(sender, "Sent " + args[1] + " a bill for " + args[2] + ".");
 					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
@@ -386,9 +388,10 @@ public final class CurrenciesCommand {
 			case "credit":
 				if (args.length == 3) {
 					try {
-						Account account = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
-						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
-						CurrenciesCore.credit(args[1], currency.getAcronym(), args[2]);
+						Account senderAccount = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
+						CurrencyDTO dto = CurrenciesCore.resolveCurrency(senderAccount, args[2]);
+						Account targetAccount = CurrenciesCore.getAccountFromPlayer(args[1], true);
+						CurrenciesCore.credit(targetAccount, dto.getCurrency(), dto.getBaseAmount());
 						Currencies.tell(sender, "You have credited " + args[2] + " to " + args[1] + ".");
 					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());
@@ -401,9 +404,10 @@ public final class CurrenciesCommand {
 			case "debit":
 				if (args.length == 3) {
 					try {
-						Account account = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
-						Currency currency = CurrenciesCore.getCurrencyFromAmount(account, args[2]);
-						CurrenciesCore.debit(args[1], currency.getAcronym(), args[2]);
+						Account senderAccount = CurrenciesCore.getAccountFromPlayer(sender.getName(), false);
+						CurrencyDTO dto = CurrenciesCore.resolveCurrency(senderAccount, args[2]);
+						Account targetAccount = CurrenciesCore.getAccountFromPlayer(args[1], true);
+						CurrenciesCore.debit(targetAccount, dto.getCurrency(), dto.getBaseAmount());
 						Currencies.tell(sender, "You have debited " + args[2] + " from " + args[1] + ".");
 					} catch (CurrenciesException | CurrenciesRuntimeException e) {
 						Currencies.tell(sender, e.getMessage());

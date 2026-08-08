@@ -1434,15 +1434,31 @@ public final class CurrenciesCore {
     }
 
     public static Currency getCurrencyFromAmount(Account account, String amount) throws CurrenciesException {
-        String[] parts = amount.replaceAll("([0-9-]+)", "|$1|").replaceAll("(^\\|*)|(\\|*$)", "").split("\\|");
+        return resolveCurrency(account, amount).getCurrency();
+    }
 
+    /**
+     * Resolves an amount string whose currency is ambiguous: the currency is inferred from a prime unit
+     * symbol embedded in the string (disambiguated via the account's default currency if the symbol is
+     * shared by more than one currency), and the total base-unit amount is computed against that currency
+     * in the same pass. Callers that previously called getCurrencyFromAmount() and then parseCurrency()
+     * separately can use this instead to avoid resolving the currency and parsing the string twice.
+     */
+    public static CurrencyDTO resolveCurrency(Account account, String amount) throws CurrenciesException {
+        boolean isNegative = false;
+        String working = amount;
+        if (working.matches("(^-).*")) {
+            isNegative = true;
+            working = working.replaceAll("(^-)", "");
+        }
+
+        String[] parts = working.replaceAll("([0-9-]+)", "|$1|").replaceAll("(^\\|*)|(\\|*$)", "").split("\\|");
         if (parts.length == 0 || parts.length == 1) {
             throw new CurrenciesException("Either no symbol or no currency amount was provided.");
         }
 
-        Currency c = null;
-
         try (Connection conn = db.getConnection()) {
+            Currency currency = null;
             for (String part : parts) {
                 if (!part.matches("\\D+")) {
                     continue;
@@ -1450,10 +1466,10 @@ public final class CurrenciesCore {
                 List<Unit> primes = queryPrimeUnitsBySymbol(conn, part);
 
                 if (primes.size() == 1) {
-                    if (c != null) {
+                    if (currency != null) {
                         throw new CurrenciesException("Two prime units were provided in the currency string.");
                     }
-                    c = primes.get(0).getCurrency();
+                    currency = primes.get(0).getCurrency();
                 } else if (primes.size() > 1) {
                     if (account == null || account.getDefaultCurrency() == null) {
                         throw new CurrenciesException(
@@ -1461,23 +1477,54 @@ public final class CurrenciesCore {
                     }
                     for (Unit p : primes) {
                         if (p.getCurrency().getId().equals(account.getDefaultCurrency().getId())) {
-                            c = p.getCurrency();
+                            currency = p.getCurrency();
                             break;
                         }
                     }
                 }
             }
+
+            if (currency == null) {
+                throw new CurrenciesException("No prime unit was located in your currency string.");
+            }
+
+            Unit baseUnit = queryBaseUnit(conn, currency);
+            if (baseUnit == null) {
+                throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
+            }
+
+            long baseAmount = 0;
+            Unit partUnit = null;
+            Long partAmount = null;
+            for (String part : parts) {
+                if (part.matches("\\D+")) {
+                    partUnit = queryUnitBySymbolAndCurrency(conn, currency, part);
+                    if (partUnit == null) {
+                        throw new CurrenciesException(part + " is not a valid symbol.");
+                    }
+                } else {
+                    try {
+                        partAmount = Math.abs(Long.parseLong(part));
+                    } catch (NumberFormatException e) {
+                        throw new CurrenciesException(part + " could not be parsed into a number.");
+                    }
+                }
+
+                if (partUnit != null && partAmount != null) {
+                    baseAmount += partUnit.getBaseMultiples() != 0
+                            ? partAmount * partUnit.getBaseMultiples()
+                            : partAmount;
+                    partUnit = null;
+                    partAmount = null;
+                }
+            }
+
+            return new CurrencyDTO(currency, baseUnit, isNegative ? baseAmount * -1 : baseAmount);
         } catch (CurrenciesException e) {
             throw e;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getCurrencyFromAmount: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in resolveCurrency: " + e.getMessage());
         }
-
-        if (c == null) {
-            throw new CurrenciesException("No prime unit was located in your currency string.");
-        }
-
-        return c;
     }
 
     /**
