@@ -45,7 +45,7 @@ All monetary amounts are stored as `long` values in the smallest base unit of a 
 Created at first startup and never deleted:
 1. **Central Bank** — receives funds from bankruptcy operations to keep currency in circulation
 2. **Central Banker** — tracks total currency in circulation
-3. **Enderman Market** / **Enderman Marketeer** — reserved for a future feature, currently unused
+3. **Enderman Market** / **Enderman Marketeer** — reserved for a future feature, currently unused. The intended design: the Enderman Marketeer is the debt-side counterpart to a normal merchant. When a player goes bankrupt, overdrafts, or falls into debt, the Enderman Marketeer repossesses land the player owns — the land is literally evicted into The End.
 
 ### Bill Workflow
 
