@@ -7,6 +7,10 @@ import java.util.List;
 public class Account implements Serializable {
 	private static final long serialVersionUID = 1L;
 
+	// IDs 1-4 are reserved system accounts (Central Bank, Central Banker, Enderman Market, Enderman Marketeer).
+	private static final int RESERVED_ACCOUNT_ID_MIN = 1;
+	private static final int RESERVED_ACCOUNT_ID_MAX = 4;
+
 	private Integer id;
 	private Timestamp dateCreated;
 	private Timestamp dateModified;
@@ -29,6 +33,10 @@ public class Account implements Serializable {
 
 	public void setId(Integer id) {
 		this.id = id;
+	}
+
+	public boolean isReserved() {
+		return id != null && id >= RESERVED_ACCOUNT_ID_MIN && id <= RESERVED_ACCOUNT_ID_MAX;
 	}
 
 	public Timestamp getDateCreated() {

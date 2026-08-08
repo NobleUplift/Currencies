@@ -17,6 +17,7 @@ import com.nobleuplift.currencies.entities.Currency;
 import com.nobleuplift.currencies.entities.Holding;
 import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
+import com.nobleuplift.currencies.entities.TransactionType;
 import com.nobleuplift.currencies.entities.Unit;
 
 /**
@@ -56,12 +57,6 @@ public final class CurrenciesCore {
     public static final int MINECRAFT_CENTRAL_BANKER = 2;
     public static final int THE_ENDERMAN_MARKET = 3;
     public static final int THE_ENDERMAN_MARKETEER = 4;
-
-    public static final short TRANSACTION_TYPE_PAY_ID = 1;
-    public static final short TRANSACTION_TYPE_BILL_ID = 2;
-    public static final short TRANSACTION_TYPE_CREDIT_ID = 3;
-    public static final short TRANSACTION_TYPE_DEBIT_ID = 4;
-    public static final short TRANSACTION_TYPE_BANKRUPT_ID = 5;
 
     private static DatabaseManager db;
 
@@ -623,10 +618,10 @@ public final class CurrenciesCore {
         if (fromAccount.getId().equals(toAccount.getId())) {
             throw new CurrenciesException("You cannot pay yourself.");
         }
-        if (fromAccount.getId() >= 1 && fromAccount.getId() <= 4) {
+        if (fromAccount.isReserved()) {
             throw new CurrenciesException("Reserved accounts cannot pay.");
         }
-        if (toAccount.getId() >= 1 && toAccount.getId() <= 4) {
+        if (toAccount.isReserved()) {
             throw new CurrenciesException("Cannot pay a reserved account.");
         }
         if (baseAmount <= 0) {
@@ -654,7 +649,7 @@ public final class CurrenciesCore {
                 }
 
                 Transaction t = privateTransferAmount(conn, fromAccount, toAccount, currency, baseAmount);
-                t.setTypeId(TRANSACTION_TYPE_PAY_ID);
+                t.setTypeId(TransactionType.PAY.getId());
                 long txId = insertTransaction(conn, t);
                 t.setId(txId);
 
@@ -688,10 +683,10 @@ public final class CurrenciesCore {
         if (fromAccount.getId().equals(toAccount.getId())) {
             throw new CurrenciesException("You cannot bill yourself.");
         }
-        if (fromAccount.getId() >= 1 && fromAccount.getId() <= 4) {
+        if (fromAccount.isReserved()) {
             throw new CurrenciesException("Reserved accounts cannot bill.");
         }
-        if (toAccount.getId() >= 1 && toAccount.getId() <= 4) {
+        if (toAccount.isReserved()) {
             throw new CurrenciesException("Cannot bill a reserved account.");
         }
         if (baseAmount <= 0) {
@@ -719,7 +714,7 @@ public final class CurrenciesCore {
                     ps.setInt(1, fromAccount.getId());
                     ps.setInt(2, toAccount.getId());
                     ps.setShort(3, base.getId());
-                    ps.setShort(4, TRANSACTION_TYPE_BILL_ID);
+                    ps.setShort(4, TransactionType.BILL.getId());
                     ps.setLong(5, baseAmount);
                     ps.setTimestamp(6, now);
                     ps.executeUpdate();
@@ -739,7 +734,7 @@ public final class CurrenciesCore {
                     t.setSender(fromAccount);
                     t.setRecipient(toAccount);
                     t.setUnit(base);
-                    t.setTypeId(TRANSACTION_TYPE_BILL_ID);
+                    t.setTypeId(TransactionType.BILL.getId());
                     t.setTransactionAmount(baseAmount);
                     t.setFinalSenderAmount(null);
                     t.setFinalRecipientAmount(null);
@@ -799,7 +794,7 @@ public final class CurrenciesCore {
                     }
                 }
 
-                if (t.getTypeId() != TRANSACTION_TYPE_BILL_ID) {
+                if (t.getTypeId() != TransactionType.BILL.getId()) {
                     throw new CurrenciesException("Transaction is not a bill.");
                 }
                 if (t.getPaid() != null) {
@@ -929,7 +924,7 @@ public final class CurrenciesCore {
     }
 
     public static Transaction credit(Account account, Currency currency, long baseAmount) throws CurrenciesException {
-        if (account.getId() >= 1 && account.getId() <= 4) {
+        if (account.isReserved()) {
             throw new CurrenciesException("Cannot credit a reserved account.");
         }
         if (baseAmount <= 0) {
@@ -942,7 +937,7 @@ public final class CurrenciesCore {
             conn.setAutoCommit(false);
             try {
                 Transaction t = privateTransferAmount(conn, bank, account, currency, baseAmount);
-                t.setTypeId(TRANSACTION_TYPE_CREDIT_ID);
+                t.setTypeId(TransactionType.CREDIT.getId());
                 long txId = insertTransaction(conn, t);
                 t.setId(txId);
 
@@ -968,7 +963,7 @@ public final class CurrenciesCore {
     }
 
     public static Transaction debit(Account account, Currency currency, long baseAmount) throws CurrenciesException {
-        if (account.getId() >= 1 && account.getId() <= 4) {
+        if (account.isReserved()) {
             throw new CurrenciesException("Cannot debit a reserved account.");
         }
         if (baseAmount <= 0) {
@@ -981,7 +976,7 @@ public final class CurrenciesCore {
             conn.setAutoCommit(false);
             try {
                 Transaction t = privateTransferAmount(conn, account, bank, currency, baseAmount);
-                t.setTypeId(TRANSACTION_TYPE_DEBIT_ID);
+                t.setTypeId(TransactionType.DEBIT.getId());
                 long txId = insertTransaction(conn, t);
                 t.setId(txId);
 
@@ -1038,12 +1033,12 @@ public final class CurrenciesCore {
                             continue;
                         }
                         Transaction t = privateTransferAmount(conn, account, centralBanker, currency, h.getAmount());
-                        t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
+                        t.setTypeId(TransactionType.BANKRUPT.getId());
                         insertTransaction(conn, t);
                     }
 
                     Transaction creditT = privateTransferAmount(conn, centralBank, account, currency, bankruptAmount);
-                    creditT.setTypeId(TRANSACTION_TYPE_CREDIT_ID);
+                    creditT.setTypeId(TransactionType.CREDIT.getId());
                     insertTransaction(conn, creditT);
 
                 } else if (acronym != null) {
@@ -1057,7 +1052,7 @@ public final class CurrenciesCore {
                             continue;
                         }
                         Transaction t = privateTransferAmount(conn, account, centralBanker, currency, h.getAmount());
-                        t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
+                        t.setTypeId(TransactionType.BANKRUPT.getId());
                         insertTransaction(conn, t);
                     }
 
@@ -1072,7 +1067,7 @@ public final class CurrenciesCore {
                         }
                         Currency hCurrency = h.getUnit().getCurrency();
                         Transaction t = privateTransferAmount(conn, account, centralBanker, hCurrency, h.getAmount());
-                        t.setTypeId(TRANSACTION_TYPE_BANKRUPT_ID);
+                        t.setTypeId(TransactionType.BANKRUPT.getId());
                         insertTransaction(conn, t);
                     }
                 }
@@ -1515,7 +1510,7 @@ public final class CurrenciesCore {
             conn.setAutoCommit(false);
             try {
                 Transaction t = privateTransferAmount(conn, fromAccount, toAccount, currency, amount);
-                t.setTypeId(TRANSACTION_TYPE_PAY_ID);
+                t.setTypeId(TransactionType.PAY.getId());
                 long txId = insertTransaction(conn, t);
                 t.setId(txId);
                 conn.commit();
@@ -2196,7 +2191,7 @@ public final class CurrenciesCore {
                 + " WHERE t.sender_id = ? AND t.paid IS NULL AND t.type_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, senderId);
-            ps.setShort(2, TRANSACTION_TYPE_BILL_ID);
+            ps.setShort(2, TransactionType.BILL.getId());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     result.add(mapTransactionWithRelations(rs));

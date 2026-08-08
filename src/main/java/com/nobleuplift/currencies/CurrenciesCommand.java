@@ -8,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import com.nobleuplift.currencies.entities.Account;
 import com.nobleuplift.currencies.entities.Currency;
 import com.nobleuplift.currencies.entities.Transaction;
+import com.nobleuplift.currencies.entities.TransactionType;
 import com.nobleuplift.currencies.entities.Unit;
 
 /**
@@ -353,21 +354,22 @@ public final class CurrenciesCommand {
 						Currencies.tell(sender, "--------------------");
 						Currencies.tell(sender, "Transactions " + rangeStart + " through " + rangeEnd + ":");
 						for (Transaction t : transactions) {
-							if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_PAY_ID) {
+							TransactionType type = TransactionType.fromId(t.getTypeId());
+							if (type == TransactionType.PAY) {
 								sender.sendMessage(t.getId() + ". " + t.getSender().getName() + " paid " +
-									t.getRecipient().getName() + " " + 
+									t.getRecipient().getName() + " " +
 									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount())
 								);
-							} else if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_BILL_ID) {
+							} else if (type == TransactionType.BILL) {
 								sender.sendMessage(t.getId() + ". " + t.getRecipient().getName() + " billed " + t.getSender().getName() + " for " +
-									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " and " + t.getSender().getName() + 
+									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " and " + t.getSender().getName() +
 									(t.getPaid() == null ? " has not paid." : (t.getPaid() ? " paid." : " did not pay."))
 								);
-							} else if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_CREDIT_ID) {
+							} else if (type == TransactionType.CREDIT) {
 								sender.sendMessage(t.getId() + ". Credited " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " to " + t.getRecipient().getName());
-							} else if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_DEBIT_ID) {
+							} else if (type == TransactionType.DEBIT) {
 								sender.sendMessage(t.getId() + ". Debited " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " from " + t.getRecipient().getName());
-							} else if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_BANKRUPT_ID) {
+							} else if (type == TransactionType.BANKRUPT) {
 								sender.sendMessage(t.getId() + ". Bankrupted " + t.getSender().getName() + " on " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()));
 							} else {
 								sender.sendMessage(t.getId() + ". " + t.getSender().getName() + (t.getPaid() == null ? " has not paid " : (t.getPaid() ? " paid " : " did not pay ")) +
