@@ -1,2 +1,9 @@
 database*
+!*.java
 target*
+
+# Claude Code — ignore everything except shared config and plans
+.claude/*
+!.claude/settings.json
+!.claude/plans/
+!.claude/plans/**
