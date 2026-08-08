@@ -211,6 +211,47 @@ public final class CurrenciesCore {
         }
     }
 
+    /**
+     * Shared validation for addParent/addChild: confirms the currency has a prime unit, and that the new
+     * unit's name, plural name, and symbol don't collide with an existing unit. The symbol-format check is
+     * left to each caller since addChild additionally forbids the negative sign.
+     */
+    private static void validateUnitParameters(Connection conn, Currency currency, String name, String plural, String symbol)
+            throws SQLException, CurrenciesException {
+        Unit prime = queryPrimeUnit(conn, currency);
+        if (prime == null) {
+            throw new CurrenciesException("Currency " + currency.getAcronym() + " does not have a prime unit.");
+        }
+
+        // Validate singular name
+        Unit singularUnit = queryUnitByName(conn, currency, name);
+        if (singularUnit != null) {
+            throw new CurrenciesException("Unit with name " + name + " already exists for this currency.");
+        }
+
+        // Validate plural name
+        Unit pluralUnit = queryUnitByAlternate(conn, currency, plural);
+        if (pluralUnit != null) {
+            throw new CurrenciesException("Unit with plural name " + plural + " already exists for this currency.");
+        }
+
+        // Validate symbol uniqueness within currency
+        Unit symbolUnit = queryUnitBySymbolAndCurrency(conn, currency, symbol);
+        if (symbolUnit != null) {
+            throw new CurrenciesException("Unit with symbol " + symbol + " already exists for currency " + currency.getAcronym() + ".");
+        }
+
+        // Validate symbol not already a prime symbol of another currency
+        Unit primeUnit = queryPrimeUnitBySymbol(conn, symbol);
+        if (primeUnit != null) {
+            throw new CurrenciesException("Unit with symbol " + symbol + " is a prime unit for another currency.");
+        }
+
+        if (symbol.length() > 2) {
+            throw new CurrenciesException("Symbol can be no more than two characters.");
+        }
+    }
+
     public static void addParent(String acronym, String name, String plural, String symbol, int multiplier, String child) throws CurrenciesException {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
@@ -220,38 +261,7 @@ public final class CurrenciesCore {
                     throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
                 }
 
-                Unit prime = queryPrimeUnit(conn, c);
-                if (prime == null) {
-                    throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
-                }
-
-                // Validate singular name
-                Unit singularUnit = queryUnitByName(conn, c, name);
-                if (singularUnit != null) {
-                    throw new CurrenciesException("Unit with name " + name + " already exists for this currency.");
-                }
-
-                // Validate plural name
-                Unit pluralUnit = queryUnitByAlternate(conn, c, plural);
-                if (pluralUnit != null) {
-                    throw new CurrenciesException("Unit with plural name " + plural + " already exists for this currency.");
-                }
-
-                // Validate symbol uniqueness within currency
-                Unit symbolUnit = queryUnitBySymbolAndCurrency(conn, c, symbol);
-                if (symbolUnit != null) {
-                    throw new CurrenciesException("Unit with symbol " + symbol + " already exists for currency " + acronym + ".");
-                }
-
-                // Validate symbol not already a prime symbol of another currency
-                Unit primeUnit = queryPrimeUnitBySymbol(conn, symbol);
-                if (primeUnit != null) {
-                    throw new CurrenciesException("Unit with symbol " + symbol + " is a prime unit for another currency.");
-                }
-
-                if (symbol.length() > 2) {
-                    throw new CurrenciesException("Symbol can be no more than two characters.");
-                }
+                validateUnitParameters(conn, c, name, plural, symbol);
                 if (!symbol.matches("\\D+")) {
                     throw new CurrenciesException("Symbol cannot contain numbers.");
                 }
@@ -315,38 +325,7 @@ public final class CurrenciesCore {
                     throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
                 }
 
-                Unit prime = queryPrimeUnit(conn, c);
-                if (prime == null) {
-                    throw new CurrenciesException("Currency " + acronym + " does not have a prime unit.");
-                }
-
-                // Validate singular name
-                Unit singularUnit = queryUnitByName(conn, c, name);
-                if (singularUnit != null) {
-                    throw new CurrenciesException("Unit with name " + name + " already exists for this currency.");
-                }
-
-                // Validate plural name
-                Unit pluralUnit = queryUnitByAlternate(conn, c, plural);
-                if (pluralUnit != null) {
-                    throw new CurrenciesException("Unit with plural name " + plural + " already exists for this currency.");
-                }
-
-                // Validate symbol uniqueness within currency
-                Unit symbolUnit = queryUnitBySymbolAndCurrency(conn, c, symbol);
-                if (symbolUnit != null) {
-                    throw new CurrenciesException("Unit with symbol " + symbol + " already exists for currency " + acronym + ".");
-                }
-
-                // Validate symbol not already a prime symbol of another currency
-                Unit primeUnit = queryPrimeUnitBySymbol(conn, symbol);
-                if (primeUnit != null) {
-                    throw new CurrenciesException("Unit with symbol " + symbol + " is a prime unit for another currency.");
-                }
-
-                if (symbol.length() > 2) {
-                    throw new CurrenciesException("Symbol can be no more than two characters.");
-                }
+                validateUnitParameters(conn, c, name, plural, symbol);
                 if (!symbol.matches("\\D+") || symbol.contains("-")) {
                     throw new CurrenciesException("Symbol cannot contain numbers or the negative symbol.");
                 }
