@@ -8,7 +8,6 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +106,7 @@ public final class CurrenciesCore {
                     }
                 }
 
-                Timestamp now = new Timestamp(Calendar.getInstance().getTimeInMillis());
+                Timestamp now = now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO currencies_currency (name, acronym, prefix, deleted, default_currency, date_created, date_modified, date_deleted)"
                         + " VALUES (?, ?, ?, 0, 0, ?, ?, NULL)")) {
@@ -141,7 +140,7 @@ public final class CurrenciesCore {
                     throw new CurrenciesException("Could not find currency with acronym " + acronym + ".");
                 }
 
-                Timestamp now = new Timestamp(Calendar.getInstance().getTimeInMillis());
+                Timestamp now = now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "UPDATE currencies_currency SET deleted = 1, date_deleted = ?, date_modified = ? WHERE id = ?")) {
                     ps.setTimestamp(1, now);
@@ -185,7 +184,7 @@ public final class CurrenciesCore {
                     throw new CurrenciesException("Symbol cannot contain numbers.");
                 }
 
-                Timestamp now = new Timestamp(Calendar.getInstance().getTimeInMillis());
+                Timestamp now = now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO currencies_unit"
                         + " (currency_id, child_unit_id, name, alternate, symbol, prime, main, child_multiples, base_multiples, date_created, date_modified)"
@@ -277,7 +276,7 @@ public final class CurrenciesCore {
                         ? multiplier * childUnit.getBaseMultiples()
                         : multiplier;
 
-                Timestamp now = new Timestamp(Calendar.getInstance().getTimeInMillis());
+                Timestamp now = now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO currencies_unit"
                         + " (currency_id, child_unit_id, name, alternate, symbol, prime, main, child_multiples, base_multiples, date_created, date_modified)"
@@ -367,7 +366,7 @@ public final class CurrenciesCore {
 
                 // Get all units for this currency and update their base_multiples
                 List<Unit> units = queryAllUnitsForCurrency(conn, c);
-                Timestamp now = new Timestamp(Calendar.getInstance().getTimeInMillis());
+                Timestamp now = now();
                 for (Unit u : units) {
                     if (u.getId().equals(parentUnit.getId())) {
                         continue;
@@ -484,7 +483,7 @@ public final class CurrenciesCore {
                     }
                 }
 
-                Timestamp now = new Timestamp(Calendar.getInstance().getTimeInMillis());
+                Timestamp now = now();
                 int newAccountId;
                 try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO currencies_account (name, uuid, default_currency_id, date_created, date_modified)"
@@ -561,7 +560,7 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Timestamp now = new Timestamp(Calendar.getInstance().getTimeInMillis());
+                Timestamp now = now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "UPDATE currencies_account SET default_currency_id = ?, date_modified = ? WHERE id = ?")) {
                     ps.setShort(1, currency.getId());
@@ -728,7 +727,7 @@ public final class CurrenciesCore {
                     throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
                 }
 
-                Timestamp now = new Timestamp(Calendar.getInstance().getTimeInMillis());
+                Timestamp now = now();
 
                 // bill: sender=fromAccount (the biller), recipient=toAccount (the one being billed),
                 // paid=NULL (pending)
@@ -852,7 +851,7 @@ public final class CurrenciesCore {
                 }
 
                 // Update the existing bill transaction with paid status
-                Timestamp now = new Timestamp(Calendar.getInstance().getTimeInMillis());
+                Timestamp now = now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "UPDATE currencies_transaction SET paid = ?, date_paid = ? WHERE id = ?")) {
                     ps.setBoolean(1, pay);
@@ -1512,6 +1511,13 @@ public final class CurrenciesCore {
     // =========================================================================
 
     /**
+     * Java has no direct equivalent of MySQL's NOW(); this centralizes the current-time Timestamp construction.
+     */
+    private static Timestamp now() {
+        return new Timestamp(System.currentTimeMillis());
+    }
+
+    /**
      * Compact all non-base holdings for the account into the base holding within the given connection/transaction.
      */
     private static int compactHoldings(Connection conn, Account account) throws SQLException {
@@ -1626,7 +1632,7 @@ public final class CurrenciesCore {
 
         upsertHolding(conn, toAccount.getId(), base.getId(), toAmount);
 
-        Timestamp now = new Timestamp(Calendar.getInstance().getTimeInMillis());
+        Timestamp now = now();
 
         Transaction t = new Transaction();
         t.setSender(fromAccount);
@@ -1680,7 +1686,7 @@ public final class CurrenciesCore {
             }
             ps.setTimestamp(10, t.getDateCreated() != null
                     ? t.getDateCreated()
-                    : new Timestamp(Calendar.getInstance().getTimeInMillis()));
+                    : now());
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
