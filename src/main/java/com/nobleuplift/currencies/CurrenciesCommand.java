@@ -157,8 +157,12 @@ public final class CurrenciesCommand {
 							currencies = CurrenciesCore.list();
 						}
 						
+						int displayPage = (page <= 1) ? 1 : page;
+						int rangeStart = ((displayPage - 1) * 10) + 1;
+						int rangeEnd = rangeStart + currencies.size() - 1;
+
 						Currencies.tell(sender, "--------------------");
-						Currencies.tell(sender, "Currencies " + (((page - 1) * 10) + 1) + " through " + (((page - 1) * 10) + 10) + ":");
+						Currencies.tell(sender, "Currencies " + rangeStart + " through " + rangeEnd + ":");
 						for (Currency currency : currencies) {
 							Currencies.tell(sender, "(" + currency.getAcronym() + ") " + /*currency.getId() + ". " + */currency.getName());
 							Map<Short, Unit> units = CurrenciesCore.getUnits(currency);
@@ -340,8 +344,12 @@ public final class CurrenciesCommand {
 							transactions = CurrenciesCore.transactions(sender.getName());
 						}
 						
+						int displayPage = (page <= 1) ? 1 : page;
+						int rangeStart = ((displayPage - 1) * 10) + 1;
+						int rangeEnd = rangeStart + transactions.size() - 1;
+
 						Currencies.tell(sender, "--------------------");
-						Currencies.tell(sender, "Transactions " + (((page - 1) * 10) + 1) + " through " + (((page - 1) * 10) + 10) + ":");
+						Currencies.tell(sender, "Transactions " + rangeStart + " through " + rangeEnd + ":");
 						for (Transaction t : transactions) {
 							if (t.getTypeId() == CurrenciesCore.TRANSACTION_TYPE_PAY_ID) {
 								sender.sendMessage(t.getId() + ". " + t.getSender().getName() + " paid " +
