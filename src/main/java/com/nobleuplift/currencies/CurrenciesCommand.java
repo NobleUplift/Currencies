@@ -363,7 +363,7 @@ public final class CurrenciesCommand {
 							} else if (type == TransactionType.BILL) {
 								sender.sendMessage(t.getId() + ". " + t.getRecipient().getName() + " billed " + t.getSender().getName() + " for " +
 									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " and " + t.getSender().getName() +
-									(t.getPaid() == null ? " has not paid." : (t.getPaid() ? " paid." : " did not pay."))
+									(t.isPaid() == null ? " has not paid." : (t.isPaid() ? " paid." : " did not pay."))
 								);
 							} else if (type == TransactionType.CREDIT) {
 								sender.sendMessage(t.getId() + ". Credited " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()) + " to " + t.getRecipient().getName());
@@ -372,7 +372,7 @@ public final class CurrenciesCommand {
 							} else if (type == TransactionType.BANKRUPT) {
 								sender.sendMessage(t.getId() + ". Bankrupted " + t.getSender().getName() + " on " + CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount()));
 							} else {
-								sender.sendMessage(t.getId() + ". " + t.getSender().getName() + (t.getPaid() == null ? " has not paid " : (t.getPaid() ? " paid " : " did not pay ")) +
+								sender.sendMessage(t.getId() + ". " + t.getSender().getName() + (t.isPaid() == null ? " has not paid " : (t.isPaid() ? " paid " : " did not pay ")) +
 									t.getRecipient().getName() + " " + 
 									CurrenciesCore.formatCurrency(t.getUnit().getCurrency(), t.getTransactionAmount())
 								);

@@ -797,8 +797,8 @@ public final class CurrenciesCore {
                 if (t.getTypeId() != TransactionType.BILL.getId()) {
                     throw new CurrenciesException("Transaction is not a bill.");
                 }
-                if (t.getPaid() != null) {
-                    throw new CurrenciesException("Bill has already been " + (t.getPaid() ? "paid." : "rejected."));
+                if (t.isPaid() != null) {
+                    throw new CurrenciesException("Bill has already been " + (t.isPaid() ? "paid." : "rejected."));
                 }
 
                 if (pay) {
@@ -1307,14 +1307,14 @@ public final class CurrenciesCore {
                     if (quotient == 0) {
                         continue;
                     }
-                    if (currency.getPrefix()) {
+                    if (currency.isPrefix()) {
                         retval += u.getSymbol() + quotient;
                     } else {
                         retval += quotient + u.getSymbol();
                     }
                     remainder = remainder % u.getBaseMultiples();
                 } else if (remainder != 0) {
-                    if (currency.getPrefix()) {
+                    if (currency.isPrefix()) {
                         retval += u.getSymbol() + remainder;
                     } else {
                         retval += remainder + u.getSymbol();
@@ -1695,8 +1695,8 @@ public final class CurrenciesCore {
             } else {
                 ps.setNull(7, Types.BIGINT);
             }
-            if (t.getPaid() != null) {
-                ps.setBoolean(8, t.getPaid());
+            if (t.isPaid() != null) {
+                ps.setBoolean(8, t.isPaid());
             } else {
                 ps.setNull(8, Types.TINYINT);
             }

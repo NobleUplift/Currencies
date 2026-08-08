@@ -79,10 +79,6 @@ public class Unit implements Serializable {
 		return this.main;
 	}
 
-	public boolean getMain() {
-		return this.main;
-	}
-
 	public void setMain(boolean main) {
 		this.main = main;
 	}
@@ -96,10 +92,6 @@ public class Unit implements Serializable {
 	}
 
 	public boolean isPrime() {
-		return this.prime;
-	}
-
-	public boolean getPrime() {
 		return this.prime;
 	}
 

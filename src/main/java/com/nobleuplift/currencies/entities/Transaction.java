@@ -66,10 +66,6 @@ public class Transaction implements Serializable {
 		return this.paid;
 	}
 
-	public Boolean getPaid() {
-		return this.paid;
-	}
-
 	public void setPaid(Boolean paid) {
 		this.paid = paid;
 	}

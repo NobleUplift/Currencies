@@ -67,10 +67,6 @@ public class Currency implements Serializable {
 		return this.deleted;
 	}
 
-	public boolean getDeleted() {
-		return this.deleted;
-	}
-
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
 	}
@@ -87,19 +83,11 @@ public class Currency implements Serializable {
 		return this.prefix;
 	}
 
-	public boolean getPrefix() {
-		return this.prefix;
-	}
-
 	public void setPrefix(boolean prefix) {
 		this.prefix = prefix;
 	}
 
 	public boolean isGlobalDefault() {
-		return globalDefault;
-	}
-
-	public boolean getGlobalDefault() {
 		return globalDefault;
 	}
 
