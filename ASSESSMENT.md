@@ -38,17 +38,15 @@ The player join handler checks UUID first, then falls back to name, and suffixes
 
 ## Weaknesses
 
-### 1. CurrenciesCore Is a Static God Object
-**Severity: High**
+### ~~1. CurrenciesCore Is a Static God Object~~
+~~**Severity: High**~~
 
-`CurrenciesCore` is ~2400 lines of all-static methods handling currency CRUD, unit management, account management, five transaction types, bill workflow, compacting, parsing, and formatting. It has no instance state and cannot be subclassed, mocked, or extended.
+~~`CurrenciesCore` is ~2400 lines of all-static methods handling currency CRUD, unit management, account management, five transaction types, bill workflow, compacting, parsing, and formatting. It has no instance state and cannot be subclassed, mocked, or extended.~~
 
-- Zero testability: all database access is now through an injected `DatabaseManager` (resolved in Paper 1.21 upgrade), but the class itself remains a static facade with no decomposition.
-- Violates Single Responsibility Principle across every domain concern.
+~~- Zero testability: all database access is now through an injected `DatabaseManager` (resolved in Paper 1.21 upgrade), but the class itself remains a static facade with no decomposition.~~
+~~- Violates Single Responsibility Principle across every domain concern.~~
 
-**Partial fix applied:** `CurrenciesCore.init(db)` injects a `DatabaseManager` at startup, eliminating the `Currencies.getInstance().getDatabase()` call in every method. The public static API is preserved for external plugins.
-
-**Remaining fix:** Decompose into domain-specific classes (CurrencyService, AccountService, TransactionService, etc.) behind the static facade. Deliberately deferred as a separate future initiative — the smaller fixes below reduce the surface area to decompose.
+**Fixed:** Decomposed into a ports-and-adapters `services` package — `CurrencyService`, `AccountService`, `TransactionService`, `Ledger`, `CurrencyFormatter`, and a `CurrencyRepository` port with a `JdbcCurrencyRepository` adapter (`ConnectionProvider` abstracts `DatabaseManager` at the same seam). `CurrenciesCore` is now a ~325-line static facade whose public methods are one-line delegations to injected service instances, wired once in `init()`. External plugins see no change to the public API. Every method in the new `services` package has JUnit 5/Mockito test coverage, including end-to-end currency scenarios drawn from README.md and historical British coinage.
 
 ---
 
@@ -92,21 +90,21 @@ The player join handler checks UUID first, then falls back to name, and suffixes
 
 ---
 
-### 6. Exception Architecture Is Unclear
-**Severity: Medium**
+### ~~6. Exception Architecture Is Unclear~~
+~~**Severity: Medium**~~
 
-`CurrenciesException` (checked) and `CurrenciesRuntimeException` (unchecked) are caught together in every `catch` block in `CurrenciesCommand` and handled identically. The checked/unchecked distinction does no work. Neither exception class accepts a `Throwable cause`, so database exception stack traces are always lost.
+~~`CurrenciesException` (checked) and `CurrenciesRuntimeException` (unchecked) are caught together in every `catch` block in `CurrenciesCommand` and handled identically. The checked/unchecked distinction does no work. Neither exception class accepts a `Throwable cause`, so database exception stack traces are always lost.~~
 
-**Fix:** Add a `(String message, Throwable cause)` constructor to both types. Reconsider whether two exception types are needed or whether a single exception with an error-code enum suffices.
+**Partially fixed:** Both `CurrenciesException` and `CurrenciesRuntimeException` now have a `(String message, Throwable cause)` constructor, used at every wrap-and-rethrow site in the `services` package (46 sites) so `SQLException` stack traces are preserved. **Still open:** the checked/unchecked distinction itself still does no work — `CurrenciesCommand` still catches both identically. Collapsing to a single exception type was not attempted this round.
 
 ---
 
-### 7. Inconsistent Soft-Delete Pattern
-**Severity: Medium**
+### ~~7. Inconsistent Soft-Delete Pattern~~
+~~**Severity: Medium**~~
 
-`Currency` has both a `deleted` boolean field and a `dateDeleted` timestamp with no enforced invariant that `deleted == true IFF dateDeleted != null`.
+~~`Currency` has both a `deleted` boolean field and a `dateDeleted` timestamp with no enforced invariant that `deleted == true IFF dateDeleted != null`.~~
 
-**Fix:** Remove the `deleted` boolean; treat `dateDeleted IS NOT NULL` as the authoritative soft-delete signal.
+**Fixed:** Removed the `deleted` boolean field entirely. `Currency.isDeleted()` is now derived directly from `dateDeleted != null`, making `dateDeleted` the sole soft-delete signal with no invariant to enforce.
 
 ---
 
@@ -168,13 +166,13 @@ The player join handler checks UUID first, then falls back to name, and suffixes
 
 | Issue | Category | Severity | Status |
 |---|---|---|---|
-| CurrenciesCore static god object | Architecture | High | Partial (DB injection fixed; decomposition deferred) |
+| ~~CurrenciesCore static god object~~ | ~~Architecture~~ | ~~High~~ | **Fixed** |
 | ~~addParent/addChild validation duplication~~ | ~~DRY~~ | ~~High~~ | **Fixed** |
 | ~~Magic numbers (account IDs, transaction type shorts)~~ | ~~Design~~ | ~~High~~ | **Fixed** |
 | ~~ORM lazy-load in toString()~~ | ~~ORM anti-pattern~~ | ~~High~~ | **Fixed** |
 | ~~Dual boolean getter naming~~ | ~~Convention~~ | ~~Medium~~ | **Fixed** |
-| Exception architecture unclear, no cause chaining | Error handling | Medium | Open |
-| Inconsistent soft-delete | Data integrity | Medium | Open |
+| Exception architecture unclear, no cause chaining | Error handling | Medium | Partial (cause chaining fixed; checked/unchecked split still open) |
+| ~~Inconsistent soft-delete~~ | ~~Data integrity~~ | ~~Medium~~ | **Fixed** |
 | ~~No optimistic locking~~ | ~~Concurrency~~ | ~~Medium~~ | **Resolved by design** |
 | ~~Command layer uses JPA entities directly~~ | ~~Layering~~ | ~~Medium~~ | **Resolved by design** |
 | ~~DB init has no rollback / dead migration code~~ | ~~Reliability~~ | ~~Medium~~ | **Fixed** |
