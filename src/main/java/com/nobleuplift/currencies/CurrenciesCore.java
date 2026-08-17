@@ -19,14 +19,14 @@ import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
 import com.nobleuplift.currencies.entities.TransactionType;
 import com.nobleuplift.currencies.entities.Unit;
-import com.nobleuplift.currencies.service.AccountService;
-import com.nobleuplift.currencies.service.Clock;
-import com.nobleuplift.currencies.service.CurrencyFormatter;
-import com.nobleuplift.currencies.service.CurrencyRepository;
-import com.nobleuplift.currencies.service.CurrencyService;
-import com.nobleuplift.currencies.service.JdbcCurrencyRepository;
-import com.nobleuplift.currencies.service.Ledger;
-import com.nobleuplift.currencies.service.TransactionService;
+import com.nobleuplift.currencies.services.AccountService;
+import com.nobleuplift.currencies.services.Clock;
+import com.nobleuplift.currencies.services.CurrencyFormatter;
+import com.nobleuplift.currencies.services.CurrencyRepository;
+import com.nobleuplift.currencies.services.CurrencyService;
+import com.nobleuplift.currencies.services.JdbcCurrencyRepository;
+import com.nobleuplift.currencies.services.Ledger;
+import com.nobleuplift.currencies.services.TransactionService;
 
 /**
  * This class is the main interface for accessing Currencies

@@ -1,4 +1,4 @@
-package com.nobleuplift.currencies.service;
+package com.nobleuplift.currencies.services;
 
 import java.sql.Timestamp;
 
