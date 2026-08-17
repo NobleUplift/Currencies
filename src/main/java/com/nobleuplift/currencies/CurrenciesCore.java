@@ -66,7 +66,6 @@ public final class CurrenciesCore {
     public static final int THE_ENDERMAN_MARKET = 3;
     public static final int THE_ENDERMAN_MARKETEER = 4;
 
-    private static DatabaseManager db;
     private static final CurrencyRepository repository = new JdbcCurrencyRepository();
     private static Ledger ledger;
     private static CurrencyFormatter formatter;
@@ -75,7 +74,6 @@ public final class CurrenciesCore {
     private static TransactionService transactionService;
 
     public static void init(DatabaseManager databaseManager) {
-        db = databaseManager;
         ledger = new Ledger(databaseManager, repository);
         formatter = new CurrencyFormatter(databaseManager, repository);
         currencyService = new CurrencyService(databaseManager, repository);
