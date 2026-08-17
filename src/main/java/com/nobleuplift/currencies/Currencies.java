@@ -35,6 +35,10 @@ public class Currencies extends JavaPlugin implements Listener {
 		return instance;
 	}
 
+	public static java.util.logging.Logger getPluginLogger() {
+		return instance.getLogger();
+	}
+
 	public DatabaseManager getDb() {
 		return db;
 	}
