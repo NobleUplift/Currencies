@@ -19,6 +19,7 @@ import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
 import com.nobleuplift.currencies.entities.TransactionType;
 import com.nobleuplift.currencies.entities.Unit;
+import com.nobleuplift.currencies.service.AccountService;
 import com.nobleuplift.currencies.service.Clock;
 import com.nobleuplift.currencies.service.CurrencyFormatter;
 import com.nobleuplift.currencies.service.CurrencyRepository;
@@ -69,12 +70,14 @@ public final class CurrenciesCore {
     private static Ledger ledger;
     private static CurrencyFormatter formatter;
     private static CurrencyService currencyService;
+    private static AccountService accountService;
 
     public static void init(DatabaseManager databaseManager) {
         db = databaseManager;
         ledger = new Ledger(databaseManager, repository);
         formatter = new CurrencyFormatter(databaseManager, repository);
         currencyService = new CurrencyService(databaseManager, repository);
+        accountService = new AccountService(databaseManager, repository, currencyService);
     }
 
     // =========================================================================
@@ -118,117 +121,11 @@ public final class CurrenciesCore {
     // =========================================================================
 
     public static Account openAccount(String name, String owner) throws CurrenciesException {
-        if (name.length() <= 16) {
-            throw new CurrenciesException("Non-player accounts must be longer than 16 characters.");
-        }
-
-        try (Connection conn = db.getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                // Check name not already taken
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT id FROM currencies_account WHERE name = ?")) {
-                    ps.setString(1, name);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) {
-                            throw new CurrenciesException("Account with name " + name + " already exists.");
-                        }
-                    }
-                }
-
-                Timestamp now = Clock.now();
-                int newAccountId;
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO currencies_account (name, uuid, default_currency_id, date_created, date_modified)"
-                        + " VALUES (?, NULL, NULL, ?, ?)",
-                        Statement.RETURN_GENERATED_KEYS)) {
-                    ps.setString(1, name);
-                    ps.setTimestamp(2, now);
-                    ps.setTimestamp(3, now);
-                    ps.executeUpdate();
-                    try (ResultSet keys = ps.getGeneratedKeys()) {
-                        if (!keys.next()) {
-                            throw new CurrenciesException("Failed to insert new account.");
-                        }
-                        newAccountId = keys.getInt(1);
-                    }
-                }
-
-                // Find owner
-                int ownerAccountId;
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT id FROM currencies_account WHERE name = ?")) {
-                    ps.setString(1, owner);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) {
-                            throw new CurrenciesException("Owner " + owner + " does not exist.");
-                        }
-                        ownerAccountId = rs.getInt("id");
-                    }
-                }
-
-                // Self-referential holder (length=0)
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT IGNORE INTO currencies_holder (parent_account_id, child_account_id, length) VALUES (?, ?, 0)")) {
-                    ps.setInt(1, newAccountId);
-                    ps.setInt(2, newAccountId);
-                    ps.executeUpdate();
-                }
-
-                // Owner holder (length=1)
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT IGNORE INTO currencies_holder (parent_account_id, child_account_id, length) VALUES (?, ?, 1)")) {
-                    ps.setInt(1, ownerAccountId);
-                    ps.setInt(2, newAccountId);
-                    ps.executeUpdate();
-                }
-
-                conn.commit();
-
-                Account account = new Account();
-                account.setId(newAccountId);
-                account.setName(name);
-                account.setUuid(null);
-                account.setDefaultCurrency(null);
-                account.setDateCreated(now);
-                account.setDateModified(now);
-                return account;
-
-            } catch (CurrenciesException e) {
-                conn.rollback();
-                throw e;
-            } catch (SQLException e) {
-                conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in openAccount: " + e.getMessage(), e);
-            }
-        } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in openAccount: " + e.getMessage(), e);
-        }
+        return accountService.openAccount(name, owner);
     }
 
     public static void setDefault(String player, String acronym) throws CurrenciesException {
-        Account account = getAccountFromPlayer(player, true);
-        Currency currency = currencyService.getCurrencyFromAcronym(acronym, true);
-
-        try (Connection conn = db.getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                Timestamp now = Clock.now();
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "UPDATE currencies_account SET default_currency_id = ?, date_modified = ? WHERE id = ?")) {
-                    ps.setShort(1, currency.getId());
-                    ps.setTimestamp(2, now);
-                    ps.setInt(3, account.getId());
-                    ps.executeUpdate();
-                }
-                conn.commit();
-            } catch (SQLException e) {
-                conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in setDefault: " + e.getMessage(), e);
-            }
-        } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in setDefault: " + e.getMessage(), e);
-        }
+        accountService.setDefault(player, acronym);
     }
 
     // =========================================================================
@@ -286,8 +183,8 @@ public final class CurrenciesCore {
     // =========================================================================
 
     public static Transaction pay(String from, String to, String acronym, String amount) throws CurrenciesException {
-        Account fromAccount = getAccountFromPlayer(from, true);
-        Account toAccount = getAccountFromPlayer(to, true);
+        Account fromAccount = accountService.getAccountFromPlayer(from, true);
+        Account toAccount = accountService.getAccountFromPlayer(to, true);
         Currency currency = currencyService.getCurrencyFromAcronym(acronym, true);
         long payAmount = formatter.parseCurrency(currency, amount);
         return pay(fromAccount, toAccount, currency, payAmount);
@@ -351,8 +248,8 @@ public final class CurrenciesCore {
     // =========================================================================
 
     public static Transaction bill(String to, String from, String acronym, String amount) throws CurrenciesException {
-        Account fromAccount = getAccountFromPlayer(from, true);
-        Account toAccount = getAccountFromPlayer(to, true);
+        Account fromAccount = accountService.getAccountFromPlayer(from, true);
+        Account toAccount = accountService.getAccountFromPlayer(to, true);
         Currency currency = currencyService.getCurrencyFromAcronym(acronym, true);
         long billAmount = formatter.parseCurrency(currency, amount);
         return bill(toAccount, fromAccount, currency, billAmount);
@@ -567,7 +464,7 @@ public final class CurrenciesCore {
     // =========================================================================
 
     public static Transaction credit(String player, String acronym, String amount) throws CurrenciesException {
-        Account account = getAccountFromPlayer(player, true);
+        Account account = accountService.getAccountFromPlayer(player, true);
         Currency currency = currencyService.getCurrencyFromAcronym(acronym, true);
         long baseAmount = formatter.parseCurrency(currency, amount);
         return credit(account, currency, baseAmount);
@@ -581,7 +478,7 @@ public final class CurrenciesCore {
             throw new CurrenciesException("Cannot credit someone a negative amount.");
         }
 
-        Account bank = getMinecraftCentralBank();
+        Account bank = accountService.getMinecraftCentralBank();
 
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
@@ -606,7 +503,7 @@ public final class CurrenciesCore {
     }
 
     public static Transaction debit(String player, String acronym, String amount) throws CurrenciesException {
-        Account account = getAccountFromPlayer(player, true);
+        Account account = accountService.getAccountFromPlayer(player, true);
         Currency currency = currencyService.getCurrencyFromAcronym(acronym, true);
         long baseAmount = formatter.parseCurrency(currency, amount);
         return debit(account, currency, baseAmount);
@@ -620,7 +517,7 @@ public final class CurrenciesCore {
             throw new CurrenciesException("Cannot debit someone a negative amount.");
         }
 
-        Account bank = getMinecraftCentralBank();
+        Account bank = accountService.getMinecraftCentralBank();
 
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
@@ -741,27 +638,19 @@ public final class CurrenciesCore {
     // =========================================================================
 
     public static Account getMinecraftCentralBank() {
-        return getAccountById(MINECRAFT_CENTRAL_BANK);
+        return accountService.getMinecraftCentralBank();
     }
 
     public static Account getMinecraftCentralBanker() {
-        return getAccountById(MINECRAFT_CENTRAL_BANKER);
+        return accountService.getMinecraftCentralBanker();
     }
 
     public static Account getTheEndermanMarket() {
-        return getAccountById(THE_ENDERMAN_MARKET);
+        return accountService.getTheEndermanMarket();
     }
 
     public static Account getTheEndermanMarketeer() {
-        return getAccountById(THE_ENDERMAN_MARKETEER);
-    }
-
-    private static Account getAccountById(int id) {
-        try (Connection conn = db.getConnection()) {
-            return repository.queryAccountById(conn, id);
-        } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getAccountById(" + id + "): " + e.getMessage(), e);
-        }
+        return accountService.getTheEndermanMarketeer();
     }
 
     /**
@@ -772,31 +661,11 @@ public final class CurrenciesCore {
      * need to be rewritten to use UUIDs.
      */
     public static Account getAccountFromPlayer(String player, boolean exception) throws CurrenciesRuntimeException {
-        try (Connection conn = db.getConnection()) {
-            Account account = repository.queryAccountByName(conn, player);
-            if (account == null && exception) {
-                throw new CurrenciesRuntimeException("Account " + player + " does not exist.");
-            }
-            return account;
-        } catch (CurrenciesRuntimeException e) {
-            throw e;
-        } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getAccountFromPlayer: " + e.getMessage(), e);
-        }
+        return accountService.getAccountFromPlayer(player, exception);
     }
 
     public static Account getAccountFromUniqueId(String uuid, boolean exception) throws CurrenciesRuntimeException {
-        try (Connection conn = db.getConnection()) {
-            Account account = repository.queryAccountByUuid(conn, uuid);
-            if (account == null && exception) {
-                throw new CurrenciesRuntimeException("Account with UUID " + uuid + " does not exist.");
-            }
-            return account;
-        } catch (CurrenciesRuntimeException e) {
-            throw e;
-        } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getAccountFromUniqueId: " + e.getMessage(), e);
-        }
+        return accountService.getAccountFromUniqueId(uuid, exception);
     }
 
     public static Currency getCurrency(short id, boolean exception) throws CurrenciesRuntimeException {
