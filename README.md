@@ -34,6 +34,12 @@ Add a child unit to a parent unit. Each unit can only have one child.
 * divisor - how many divisions of the parent equal the child
 * parent - the symbol of the parent unit
 
+##### `/currencies addalias <acronym> <name> <plural> <symbol> <existing-unit-symbol>` (not yet implemented)
+Add an alternate name and symbol that resolve to an already-registered unit, instead of creating a new unit at a new value. Useful for letting players type either historical name for the same coin (e.g. "sovereign" for an existing "pound" unit) without tripping the addparent/addchild duplicate-value guard, since no new unit or value is actually created.
+
+* symbol - the alias's own symbol; must not collide with any existing unit's symbol
+* existing-unit-symbol - the symbol of the already-registered unit this alias should resolve to
+
 ##### `/currencies list [page]`
 List currencies.
 
@@ -91,6 +97,7 @@ Permissions for the most part match the command names with a prefix:
 * currencies.addprime
 * currencies.addparent
 * currencies.addchild
+* currencies.addalias (not yet implemented)
 * currencies.list
 * currencies.openaccount
 * currencies.set (not yet implemented)
@@ -128,12 +135,33 @@ So, if you wanted to create the old Great British Pound before decimalization (y
 /currencies addchild GBP penny pence d 12 s
 /currencies addchild GBP farthing farthings f 4 d
 
-// Swap last two parameters
+// Fictional denomination: no coin was ever struck at 1/12 farthing. It exists only so that the
+// half farthing (6), third farthing (4), and quarter farthing (3) -- three real coins that are
+// mutually irreducible fractions of the farthing -- can all be represented as integer multiples
+// of a single base unit.
+/currencies addchild GBP 'twelfth farthing' 'twelfth farthing' t 12 f
+
+// addparent takes <multiplier> <child> -- the mirror image of addchild's <divisor> <parent>
+// above: instead of dividing a unit to create a smaller one below it, it multiplies a unit to
+// create a larger one above it. Each section below is grouped by which central unit from the
+// addchild chain (pound/shilling/penny/farthing/twelfth farthing) the multiplier is counted
+// against.
+
+// Multiples of the pound (L)
+/currencies addparent GBP 'double sovereign' 'double sovereign' dv 2 L
+/currencies addparent GBP 'five pounds' 'five pounds' fp 5 L
+
+// Multiples of the shilling (s)
 /currencies addparent GBP 'guinea' 'guinea' gu 21 s
 /currencies addparent GBP crown crowns c 5 s
 /currencies addparent GBP 'double florin' 'double florin' df 4 s
 /currencies addparent GBP florin florins fl 2 s
+/currencies addparent GBP 'third guinea' 'third guinea' tg 7 s
+/currencies addparent GBP 'half sovereign' 'half sovereign' hv 10 s
+/currencies addparent GBP 'two guineas' 'two guineas' wg 42 s
+/currencies addparent GBP 'five guineas' 'five guineas' fg 105 s
 
+// Multiples of the penny (d)
 /currencies addparent GBP 'half guinea' 'half guinea' gh 126 d
 /currencies addparent GBP halfcrown halfcrowns hc 30 d
 /currencies addparent GBP sixpence sixpence sp 6 d
@@ -141,9 +169,22 @@ So, if you wanted to create the old Great British Pound before decimalization (y
 /currencies addparent GBP twopence twopence wp 3 d
 /currencies addparent GBP groat groats g 4 d
 /currencies addparent GBP halfgroat halfgroats hg 2 d
+/currencies addparent GBP 'fifteen pence' 'fifteen pence' fn 15 d
+/currencies addparent GBP 'quarter guinea' 'quarter guinea' qg 63 d
 
+// Multiples of the farthing (f)
 /currencies addparent GBP 'three halfpence' 'three halfpence' th 6 f
 /currencies addparent GBP halfpenny halfpence hp 2 f
+
+// Multiples of the twelfth farthing (t)
+/currencies addparent GBP 'quarter farthing' 'quarter farthing' qf 3 t
+/currencies addparent GBP 'half farthing' 'half farthing' hf 6 t
+/currencies addparent GBP 'third farthing' 'third farthing' tf 4 t
+
+// Grano was Malta's own pre-existing name for this same value (1/12 penny = 1/3 farthing) --
+// the third farthing coin was struck specifically so the grano could keep circulating under
+// British coinage. addalias is not yet implemented; this is the intended usage once it is.
+/currencies addalias GBP grano grani gn tf
 ```
 
 ![Great British Pound](http://i.imgur.com/7128fra.png)
