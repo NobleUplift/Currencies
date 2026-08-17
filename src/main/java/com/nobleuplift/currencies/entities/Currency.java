@@ -12,7 +12,6 @@ public class Currency implements Serializable {
 	private Timestamp dateCreated;
 	private Timestamp dateDeleted;
 	private Timestamp dateModified;
-	private boolean deleted;
 	private String name;
 	private boolean prefix;
 	private boolean globalDefault;
@@ -64,11 +63,7 @@ public class Currency implements Serializable {
 	}
 
 	public boolean isDeleted() {
-		return this.deleted;
-	}
-
-	public void setDeleted(boolean deleted) {
-		this.deleted = deleted;
+		return this.dateDeleted != null;
 	}
 
 	public String getName() {
@@ -138,7 +133,7 @@ public class Currency implements Serializable {
 	@Override
 	public String toString() {
 		return "Currency [id=" + id + ", acronym=" + acronym + ", name=" + name
-				+ ", prefix=" + prefix + ", deleted=" + deleted + "]";
+				+ ", prefix=" + prefix + ", dateDeleted=" + dateDeleted + "]";
 	}
 
 	@Override

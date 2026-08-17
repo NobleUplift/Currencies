@@ -103,8 +103,8 @@ public final class CurrenciesCore {
 
                 Timestamp now = now();
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO currencies_currency (name, acronym, prefix, deleted, default_currency, date_created, date_modified, date_deleted)"
-                        + " VALUES (?, ?, ?, 0, 0, ?, ?, NULL)")) {
+                        "INSERT INTO currencies_currency (name, acronym, prefix, default_currency, date_created, date_modified, date_deleted)"
+                        + " VALUES (?, ?, ?, 0, ?, ?, NULL)")) {
                     ps.setString(1, name);
                     ps.setString(2, acronym);
                     ps.setBoolean(3, prefix);
@@ -137,7 +137,7 @@ public final class CurrenciesCore {
 
                 Timestamp now = now();
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "UPDATE currencies_currency SET deleted = 1, date_deleted = ?, date_modified = ? WHERE id = ?")) {
+                        "UPDATE currencies_currency SET date_deleted = ?, date_modified = ? WHERE id = ?")) {
                     ps.setTimestamp(1, now);
                     ps.setTimestamp(2, now);
                     ps.setShort(3, c.getId());
@@ -414,8 +414,8 @@ public final class CurrenciesCore {
             try {
                 List<Currency> result = new ArrayList<>();
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT id, name, acronym, prefix, deleted, default_currency, date_created, date_modified, date_deleted"
-                        + " FROM currencies_currency WHERE deleted = 0 LIMIT 10 OFFSET ?")) {
+                        "SELECT id, name, acronym, prefix, default_currency, date_created, date_modified, date_deleted"
+                        + " FROM currencies_currency WHERE date_deleted IS NULL LIMIT 10 OFFSET ?")) {
                     ps.setInt(1, offset);
                     try (ResultSet rs = ps.executeQuery()) {
                         while (rs.next()) {
@@ -880,7 +880,7 @@ public final class CurrenciesCore {
                         + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
                         + " u.child_multiples, u.base_multiples,"
                         + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                        + " c.deleted AS c_deleted, c.default_currency AS c_global_default"
+                        + " c.default_currency AS c_global_default"
                         + " FROM currencies_transaction t"
                         + " JOIN currencies_account sa ON t.sender_id = sa.id"
                         + " JOIN currencies_account ra ON t.recipient_id = ra.id"
@@ -1726,7 +1726,7 @@ public final class CurrenciesCore {
     private static Account queryAccountByName(Connection conn, String name) throws SQLException {
         String sql = "SELECT a.id, a.name, a.uuid, a.default_currency_id, a.date_created, a.date_modified,"
                 + " c.id AS dc_id, c.name AS dc_name, c.acronym AS dc_acronym, c.prefix AS dc_prefix,"
-                + " c.deleted AS dc_deleted, c.default_currency AS dc_global_default"
+                + " c.default_currency AS dc_global_default"
                 + " FROM currencies_account a"
                 + " LEFT JOIN currencies_currency c ON a.default_currency_id = c.id"
                 + " WHERE a.name = ?";
@@ -1744,7 +1744,7 @@ public final class CurrenciesCore {
     private static Account queryAccountByUuid(Connection conn, String uuid) throws SQLException {
         String sql = "SELECT a.id, a.name, a.uuid, a.default_currency_id, a.date_created, a.date_modified,"
                 + " c.id AS dc_id, c.name AS dc_name, c.acronym AS dc_acronym, c.prefix AS dc_prefix,"
-                + " c.deleted AS dc_deleted, c.default_currency AS dc_global_default"
+                + " c.default_currency AS dc_global_default"
                 + " FROM currencies_account a"
                 + " LEFT JOIN currencies_currency c ON a.default_currency_id = c.id"
                 + " WHERE a.uuid = ?";
@@ -1762,7 +1762,7 @@ public final class CurrenciesCore {
     private static Account queryAccountById(Connection conn, int id) throws SQLException {
         String sql = "SELECT a.id, a.name, a.uuid, a.default_currency_id, a.date_created, a.date_modified,"
                 + " c.id AS dc_id, c.name AS dc_name, c.acronym AS dc_acronym, c.prefix AS dc_prefix,"
-                + " c.deleted AS dc_deleted, c.default_currency AS dc_global_default"
+                + " c.default_currency AS dc_global_default"
                 + " FROM currencies_account a"
                 + " LEFT JOIN currencies_currency c ON a.default_currency_id = c.id"
                 + " WHERE a.id = ?";
@@ -1779,7 +1779,7 @@ public final class CurrenciesCore {
 
     private static Currency queryCurrencyById(Connection conn, short id) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, name, acronym, prefix, deleted, default_currency, date_created, date_modified, date_deleted"
+                "SELECT id, name, acronym, prefix, default_currency, date_created, date_modified, date_deleted"
                 + " FROM currencies_currency WHERE id = ?")) {
             ps.setShort(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -1793,7 +1793,7 @@ public final class CurrenciesCore {
 
     private static Currency queryCurrencyByAcronym(Connection conn, String acronym) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, name, acronym, prefix, deleted, default_currency, date_created, date_modified, date_deleted"
+                "SELECT id, name, acronym, prefix, default_currency, date_created, date_modified, date_deleted"
                 + " FROM currencies_currency WHERE acronym = ?")) {
             ps.setString(1, acronym);
             try (ResultSet rs = ps.executeQuery()) {
@@ -1810,7 +1810,7 @@ public final class CurrenciesCore {
                 "SELECT u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name, u.alternate AS u_alternate, u.symbol,"
                 + " u.prime, u.main, u.child_multiples, u.base_multiples,"
                 + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.deleted AS c_deleted, c.default_currency AS c_global_default"
+                + " c.default_currency AS c_global_default"
                 + " FROM currencies_unit u"
                 + " JOIN currencies_currency c ON u.currency_id = c.id"
                 + " WHERE u.id = ?")) {
@@ -2040,7 +2040,7 @@ public final class CurrenciesCore {
                 "SELECT u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name, u.alternate AS u_alternate, u.symbol,"
                 + " u.prime, u.main, u.child_multiples, u.base_multiples,"
                 + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.deleted AS c_deleted, c.default_currency AS c_global_default"
+                + " c.default_currency AS c_global_default"
                 + " FROM currencies_unit u"
                 + " JOIN currencies_currency c ON u.currency_id = c.id"
                 + " WHERE u.symbol = ? AND u.prime = 1")) {
@@ -2083,7 +2083,7 @@ public final class CurrenciesCore {
                 + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
                 + " u.child_multiples, u.base_multiples,"
                 + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.deleted AS c_deleted, c.default_currency AS c_global_default"
+                + " c.default_currency AS c_global_default"
                 + " FROM currencies_holding h"
                 + " JOIN currencies_unit u ON h.unit_id = u.id"
                 + " JOIN currencies_currency c ON u.currency_id = c.id"
@@ -2106,7 +2106,7 @@ public final class CurrenciesCore {
                 + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
                 + " u.child_multiples, u.base_multiples,"
                 + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.deleted AS c_deleted, c.default_currency AS c_global_default"
+                + " c.default_currency AS c_global_default"
                 + " FROM currencies_holding h"
                 + " JOIN currencies_unit u ON h.unit_id = u.id"
                 + " JOIN currencies_currency c ON u.currency_id = c.id"
@@ -2131,7 +2131,7 @@ public final class CurrenciesCore {
                 + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
                 + " u.child_multiples, u.base_multiples,"
                 + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.deleted AS c_deleted, c.default_currency AS c_global_default"
+                + " c.default_currency AS c_global_default"
                 + " FROM currencies_holding h"
                 + " JOIN currencies_unit u ON h.unit_id = u.id"
                 + " JOIN currencies_currency c ON u.currency_id = c.id"
@@ -2155,7 +2155,7 @@ public final class CurrenciesCore {
                 + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
                 + " u.child_multiples, u.base_multiples,"
                 + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.deleted AS c_deleted, c.default_currency AS c_global_default"
+                + " c.default_currency AS c_global_default"
                 + " FROM currencies_holding h"
                 + " JOIN currencies_unit u ON h.unit_id = u.id"
                 + " JOIN currencies_currency c ON u.currency_id = c.id"
@@ -2182,7 +2182,7 @@ public final class CurrenciesCore {
                 + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
                 + " u.child_multiples, u.base_multiples,"
                 + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.deleted AS c_deleted, c.default_currency AS c_global_default"
+                + " c.default_currency AS c_global_default"
                 + " FROM currencies_transaction t"
                 + " JOIN currencies_account sa ON t.sender_id = sa.id"
                 + " JOIN currencies_account ra ON t.recipient_id = ra.id"
@@ -2211,7 +2211,7 @@ public final class CurrenciesCore {
                 + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
                 + " u.child_multiples, u.base_multiples,"
                 + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.deleted AS c_deleted, c.default_currency AS c_global_default"
+                + " c.default_currency AS c_global_default"
                 + " FROM currencies_transaction t"
                 + " JOIN currencies_account sa ON t.sender_id = sa.id"
                 + " JOIN currencies_account ra ON t.recipient_id = ra.id"
@@ -2269,7 +2269,6 @@ public final class CurrenciesCore {
             dc.setName(rs.getString("dc_name"));
             dc.setAcronym(rs.getString("dc_acronym"));
             dc.setPrefix(rs.getBoolean("dc_prefix"));
-            dc.setDeleted(rs.getBoolean("dc_deleted"));
             dc.setGlobalDefault(rs.getBoolean("dc_global_default"));
             a.setDefaultCurrency(dc);
         }
@@ -2282,7 +2281,6 @@ public final class CurrenciesCore {
         c.setName(rs.getString("name"));
         c.setAcronym(rs.getString("acronym"));
         c.setPrefix(rs.getBoolean("prefix"));
-        c.setDeleted(rs.getBoolean("deleted"));
         c.setGlobalDefault(rs.getBoolean("default_currency"));
         c.setDateCreated(rs.getTimestamp("date_created"));
         c.setDateModified(rs.getTimestamp("date_modified"));
@@ -2316,7 +2314,6 @@ public final class CurrenciesCore {
         c.setName(rs.getString("c_name"));
         c.setAcronym(rs.getString("acronym"));
         c.setPrefix(rs.getBoolean("c_prefix"));
-        c.setDeleted(rs.getBoolean("c_deleted"));
         c.setGlobalDefault(rs.getBoolean("c_global_default"));
         u.setCurrency(c);
 
@@ -2372,7 +2369,6 @@ public final class CurrenciesCore {
         c.setName(rs.getString("c_name"));
         c.setAcronym(rs.getString("acronym"));
         c.setPrefix(rs.getBoolean("c_prefix"));
-        c.setDeleted(rs.getBoolean("c_deleted"));
         c.setGlobalDefault(rs.getBoolean("c_global_default"));
 
         u.setCurrency(c);
@@ -2439,7 +2435,6 @@ public final class CurrenciesCore {
         c.setName(rs.getString("c_name"));
         c.setAcronym(rs.getString("acronym"));
         c.setPrefix(rs.getBoolean("c_prefix"));
-        c.setDeleted(rs.getBoolean("c_deleted"));
         c.setGlobalDefault(rs.getBoolean("c_global_default"));
 
         u.setCurrency(c);
