@@ -8,11 +8,11 @@ package com.nobleuplift.currencies;
 public class CurrenciesException extends Exception {
 	private static final long serialVersionUID = -1544619419244721231L;
 	
-	protected CurrenciesException(String message) {
+	public CurrenciesException(String message) {
 		super(message);
 	}
 
-	protected CurrenciesException(String message, Throwable cause) {
+	public CurrenciesException(String message, Throwable cause) {
 		super(message, cause);
 	}
 }

@@ -20,6 +20,7 @@ import com.nobleuplift.currencies.entities.Transaction;
 import com.nobleuplift.currencies.entities.TransactionType;
 import com.nobleuplift.currencies.entities.Unit;
 import com.nobleuplift.currencies.service.Clock;
+import com.nobleuplift.currencies.service.CurrencyFormatter;
 import com.nobleuplift.currencies.service.CurrencyRepository;
 import com.nobleuplift.currencies.service.JdbcCurrencyRepository;
 import com.nobleuplift.currencies.service.Ledger;
@@ -65,10 +66,12 @@ public final class CurrenciesCore {
     private static DatabaseManager db;
     private static final CurrencyRepository repository = new JdbcCurrencyRepository();
     private static Ledger ledger;
+    private static CurrencyFormatter formatter;
 
     public static void init(DatabaseManager databaseManager) {
         db = databaseManager;
         ledger = new Ledger(databaseManager, repository);
+        formatter = new CurrencyFormatter(databaseManager, repository);
     }
 
     // =========================================================================
@@ -607,7 +610,7 @@ public final class CurrenciesCore {
         Account fromAccount = getAccountFromPlayer(from, true);
         Account toAccount = getAccountFromPlayer(to, true);
         Currency currency = getCurrencyFromAcronym(acronym, true);
-        long payAmount = parseCurrency(currency, amount);
+        long payAmount = formatter.parseCurrency(currency, amount);
         return pay(fromAccount, toAccount, currency, payAmount);
     }
 
@@ -638,11 +641,11 @@ public final class CurrenciesCore {
                 Holding baseHolding = repository.queryBaseHolding(conn, fromAccount.getId(), baseUnit.getId());
                 if (baseHolding == null) {
                     throw new CurrenciesException("You have 0" + baseUnit.getSymbol() + ". You cannot pay "
-                            + formatCurrency(currency, baseAmount) + " to " + toAccount.getName() + ".");
+                            + formatter.formatCurrency(currency, baseAmount) + " to " + toAccount.getName() + ".");
                 } else if (baseHolding.getAmount() < baseAmount) {
-                    throw new CurrenciesException("Cannot pay " + formatCurrency(currency, baseAmount) + " to "
+                    throw new CurrenciesException("Cannot pay " + formatter.formatCurrency(currency, baseAmount) + " to "
                             + toAccount.getName() + " because it is greater than "
-                            + formatCurrency(currency, baseHolding.getAmount()) + ", your current balance.");
+                            + formatter.formatCurrency(currency, baseHolding.getAmount()) + ", your current balance.");
                 }
 
                 Transaction t = ledger.privateTransferAmount(conn, fromAccount, toAccount, currency, baseAmount);
@@ -672,7 +675,7 @@ public final class CurrenciesCore {
         Account fromAccount = getAccountFromPlayer(from, true);
         Account toAccount = getAccountFromPlayer(to, true);
         Currency currency = getCurrencyFromAcronym(acronym, true);
-        long billAmount = parseCurrency(currency, amount);
+        long billAmount = formatter.parseCurrency(currency, amount);
         return bill(toAccount, fromAccount, currency, billAmount);
     }
 
@@ -811,11 +814,11 @@ public final class CurrenciesCore {
                     Holding baseHolding = repository.queryBaseHolding(conn, account.getId(), baseUnit.getId());
                     if (baseHolding == null) {
                         throw new CurrenciesException("You have 0" + baseUnit.getSymbol() + ". You cannot pay "
-                                + formatCurrency(currency, t.getTransactionAmount()) + " to " + t.getRecipient().getName() + ".");
+                                + formatter.formatCurrency(currency, t.getTransactionAmount()) + " to " + t.getRecipient().getName() + ".");
                     } else if (baseHolding.getAmount() < t.getTransactionAmount()) {
-                        throw new CurrenciesException("Cannot pay " + formatCurrency(currency, t.getTransactionAmount())
+                        throw new CurrenciesException("Cannot pay " + formatter.formatCurrency(currency, t.getTransactionAmount())
                                 + " to " + t.getRecipient().getName() + " because it is greater than "
-                                + formatCurrency(currency, baseHolding.getAmount()) + ", your current balance.");
+                                + formatter.formatCurrency(currency, baseHolding.getAmount()) + ", your current balance.");
                     }
 
                     ledger.privateTransferAmount(conn, t.getSender(), t.getRecipient(), currency, t.getTransactionAmount());
@@ -887,7 +890,7 @@ public final class CurrenciesCore {
     public static Transaction credit(String player, String acronym, String amount) throws CurrenciesException {
         Account account = getAccountFromPlayer(player, true);
         Currency currency = getCurrencyFromAcronym(acronym, true);
-        long baseAmount = parseCurrency(currency, amount);
+        long baseAmount = formatter.parseCurrency(currency, amount);
         return credit(account, currency, baseAmount);
     }
 
@@ -926,7 +929,7 @@ public final class CurrenciesCore {
     public static Transaction debit(String player, String acronym, String amount) throws CurrenciesException {
         Account account = getAccountFromPlayer(player, true);
         Currency currency = getCurrencyFromAcronym(acronym, true);
-        long baseAmount = parseCurrency(currency, amount);
+        long baseAmount = formatter.parseCurrency(currency, amount);
         return debit(account, currency, baseAmount);
     }
 
@@ -989,7 +992,7 @@ public final class CurrenciesCore {
 
                 if (amount != null) {
                     Currency currency = getCurrencyFromAcronym(acronym, true);
-                    long bankruptAmount = parseCurrency(currency, amount);
+                    long bankruptAmount = formatter.parseCurrency(currency, amount);
 
                     ledger.compactHoldings(conn, account);
 
@@ -1246,137 +1249,19 @@ public final class CurrenciesCore {
     // =========================================================================
 
     public static Map<Currency, String> formatCurrencies(Map<Currency, Long> currencyAmounts) {
-        Map<Currency, String> retval = new HashMap<>();
-        for (Map.Entry<Currency, Long> currencyAmount : currencyAmounts.entrySet()) {
-            Currency c = currencyAmount.getKey();
-            retval.put(c, formatCurrency(c, currencyAmount.getValue()));
-        }
-        return retval;
+        return formatter.formatCurrencies(currencyAmounts);
     }
 
     public static String formatCurrency(Currency currency, long amount) {
-        try (Connection conn = db.getConnection()) {
-            List<Unit> units = repository.queryMainUnitsForCurrencyDescending(conn, currency);
-
-            String retval = "";
-            if (amount < 0) {
-                retval += "-";
-                amount = Math.abs(amount);
-            }
-            Unit prime = null;
-            long remainder = amount;
-            for (Unit u : units) {
-                if (u.isPrime()) {
-                    prime = u;
-                }
-
-                if (u.getBaseMultiples() > 0) {
-                    long quotient = remainder / u.getBaseMultiples();
-                    if (quotient == 0) {
-                        continue;
-                    }
-                    if (currency.isPrefix()) {
-                        retval += u.getSymbol() + quotient;
-                    } else {
-                        retval += quotient + u.getSymbol();
-                    }
-                    remainder = remainder % u.getBaseMultiples();
-                } else if (remainder != 0) {
-                    if (currency.isPrefix()) {
-                        retval += u.getSymbol() + remainder;
-                    } else {
-                        retval += remainder + u.getSymbol();
-                    }
-                }
-            }
-
-            if (amount == 0 && prime != null) {
-                retval += currency.isPrefix() ? prime.getSymbol() + "0" : "0" + prime.getSymbol();
-            }
-
-            return retval;
-        } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in formatCurrency: " + e.getMessage(), e);
-        }
+        return formatter.formatCurrency(currency, amount);
     }
 
     public static long parseCurrency(Currency currency, String amount) throws CurrenciesException {
-        boolean isNegative = false;
-        if (amount.matches("(^-).*")) {
-            isNegative = true;
-            amount = amount.replaceAll("(^-)", "");
-            if (Currencies.DEBUG) {
-                Currencies.getInstance().getLogger().info("PARSED CURRENCY WILL BE NEGATIVE: " + amount);
-            }
-        }
-
-        // http://stackoverflow.com/questions/2206378/how-to-split-a-string-but-also-keep-the-delimiters
-        String[] parts = amount.replaceAll("([0-9-]+)", "|$1|").replaceAll("(^\\|*)|(\\|*$)", "").split("\\|");
-        if (Currencies.DEBUG) {
-            Currencies.getInstance().getLogger().info("PARSE CURRENCY - ALL: " + java.util.Arrays.toString(parts));
-        }
-
-        if (parts.length == 0 || parts.length == 1) {
-            throw new CurrenciesException("Either no symbol or no currency amount was provided.");
-        }
-
-        long baseAmount = 0;
-        Unit partUnit = null;
-        Long partAmount = null;
-
-        try (Connection conn = db.getConnection()) {
-            for (String part : parts) {
-                if (Currencies.DEBUG) {
-                    Currencies.getInstance().getLogger().info("PARSE CURRENCY - PART: " + part);
-                }
-
-                if (part.matches("\\D+")) {
-                    partUnit = repository.queryUnitBySymbolAndCurrency(conn, currency, part);
-                    if (partUnit == null) {
-                        throw new CurrenciesException(part + " is not a valid symbol.");
-                    }
-                    if (Currencies.DEBUG) {
-                        Currencies.getInstance().getLogger().info("PARSE CURRENCY - UNIT: " + partUnit.getName());
-                    }
-                } else {
-                    try {
-                        partAmount = Math.abs(Long.parseLong(part));
-                    } catch (NumberFormatException e) {
-                        throw new CurrenciesException(part + " could not be parsed into a number.");
-                    }
-                    if (Currencies.DEBUG) {
-                        Currencies.getInstance().getLogger().info("PARSE CURRENCY - PART AMOUNT: " + partAmount);
-                    }
-                }
-
-                if (partUnit != null && partAmount != null) {
-                    baseAmount += partUnit.getBaseMultiples() != 0
-                            ? partAmount * partUnit.getBaseMultiples()
-                            : partAmount;
-
-                    if (Currencies.DEBUG) {
-                        Currencies.getInstance().getLogger().info("PARSE CURRENCY - BASE AMOUNT: " + baseAmount);
-                    }
-
-                    partUnit = null;
-                    partAmount = null;
-                }
-            }
-        } catch (CurrenciesException e) {
-            throw e;
-        } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in parseCurrency: " + e.getMessage(), e);
-        }
-
-        if (Currencies.DEBUG) {
-            Currencies.getInstance().getLogger().info("PARSE CURRENCY - FINAL AMOUNT: " + baseAmount);
-        }
-
-        return isNegative ? baseAmount * -1 : baseAmount;
+        return formatter.parseCurrency(currency, amount);
     }
 
     public static Currency getCurrencyFromAmount(Account account, String amount) throws CurrenciesException {
-        return resolveCurrency(account, amount).getCurrency();
+        return formatter.getCurrencyFromAmount(account, amount);
     }
 
     /**
@@ -1387,86 +1272,7 @@ public final class CurrenciesCore {
      * separately can use this instead to avoid resolving the currency and parsing the string twice.
      */
     public static CurrencyDTO resolveCurrency(Account account, String amount) throws CurrenciesException {
-        boolean isNegative = false;
-        String working = amount;
-        if (working.matches("(^-).*")) {
-            isNegative = true;
-            working = working.replaceAll("(^-)", "");
-        }
-
-        String[] parts = working.replaceAll("([0-9-]+)", "|$1|").replaceAll("(^\\|*)|(\\|*$)", "").split("\\|");
-        if (parts.length == 0 || parts.length == 1) {
-            throw new CurrenciesException("Either no symbol or no currency amount was provided.");
-        }
-
-        try (Connection conn = db.getConnection()) {
-            Currency currency = null;
-            for (String part : parts) {
-                if (!part.matches("\\D+")) {
-                    continue;
-                }
-                List<Unit> primes = repository.queryPrimeUnitsBySymbol(conn, part);
-
-                if (primes.size() == 1) {
-                    if (currency != null) {
-                        throw new CurrenciesException("Two prime units were provided in the currency string.");
-                    }
-                    currency = primes.get(0).getCurrency();
-                } else if (primes.size() > 1) {
-                    if (account == null || account.getDefaultCurrency() == null) {
-                        throw new CurrenciesException(
-                                "This currency shares a prime unit with other currencies. You must run /currencies setdefault <currency>.");
-                    }
-                    for (Unit p : primes) {
-                        if (p.getCurrency().getId().equals(account.getDefaultCurrency().getId())) {
-                            currency = p.getCurrency();
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (currency == null) {
-                throw new CurrenciesException("No prime unit was located in your currency string.");
-            }
-
-            Unit baseUnit = repository.queryBaseUnit(conn, currency);
-            if (baseUnit == null) {
-                throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
-            }
-
-            long baseAmount = 0;
-            Unit partUnit = null;
-            Long partAmount = null;
-            for (String part : parts) {
-                if (part.matches("\\D+")) {
-                    partUnit = repository.queryUnitBySymbolAndCurrency(conn, currency, part);
-                    if (partUnit == null) {
-                        throw new CurrenciesException(part + " is not a valid symbol.");
-                    }
-                } else {
-                    try {
-                        partAmount = Math.abs(Long.parseLong(part));
-                    } catch (NumberFormatException e) {
-                        throw new CurrenciesException(part + " could not be parsed into a number.");
-                    }
-                }
-
-                if (partUnit != null && partAmount != null) {
-                    baseAmount += partUnit.getBaseMultiples() != 0
-                            ? partAmount * partUnit.getBaseMultiples()
-                            : partAmount;
-                    partUnit = null;
-                    partAmount = null;
-                }
-            }
-
-            return new CurrencyDTO(currency, baseUnit, isNegative ? baseAmount * -1 : baseAmount);
-        } catch (CurrenciesException e) {
-            throw e;
-        } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in resolveCurrency: " + e.getMessage(), e);
-        }
+        return formatter.resolveCurrency(account, amount);
     }
 
     /**
