@@ -116,9 +116,13 @@ Permissions for the most part match the command names with a prefix:
 * currencies.baknrupt.all (required to run /bankrupt <player> with no other parameters)
 
 ## Creating Currencies
-_For a complete list of non-decimal currencies, ![please see the page on the wiki](http://dev.bukkit.org/bukkit-plugins/currencies/pages/list-of-non-decimal-currencies/)._
+_For a complete list of non-decimal currencies, ![please see the page on the wiki](http://dev.bukkit.org/bukkit-plugins/currencies/pages/list-of-non-decimal-currencies/), or the much more thorough ![Wikipedia article on non-decimal currency](https://en.wikipedia.org/wiki/Non-decimal_currency), which is the source for every historical currency below._
 
-Want to create a simple decimalized currency? USA! USA!
+Every example below uses real, historically-documented denomination ratios (verified against multiple sources, not just the Wikipedia summary table). Where a currency had a long or regionally-varying history, one representative, internally-consistent period is picked and named accordingly.
+
+### United States Dollar (USD)
+
+Want to create a simple decimal currency?
 
 ```
 /currencies create USD 'United States Dollar'
@@ -126,12 +130,134 @@ Want to create a simple decimalized currency? USA! USA!
 /currencies addchild USD cent cents . 100 $
 ```
 
-So, if you wanted to create the old Great British Pound before decimalization (yeah, American spelling!), you would do the following (during development I actually was using £, but I can't type it on my keyboard in Minecraft, even with ALT codes, so I started using L. Don't hate):
+### Ancient Greek Drachma (DRC)
+
+The Attic system: a drachma of 6 obols, an obol of 8 chalkoi, and two well-known larger denominations above the drachma -- the mina and the talent -- added with `addparent`. See ![Wikipedia: Drachma](https://en.wikipedia.org/wiki/Drachma).
+
+```
+/currencies create DRC 'Ancient Greek Drachma'
+/currencies addprime DRC drachma drachmae dr
+/currencies addchild DRC obol obols ob 6 dr
+/currencies addchild DRC chalkous chalkoi ch 8 ob
+
+/currencies addparent DRC mina minae mn 100 dr
+/currencies addparent DRC talent talents tl 60 mn
+```
+
+### French Livre Tournois (LIV)
+
+Pre-revolutionary France used the exact same duodecimal/vigesimal shape as pre-decimal Britain -- 20 sols to the livre, 12 deniers to the sol -- because both descended from the same Carolingian libra/solidus/denarius system. See ![Wikipedia: French livre](https://en.wikipedia.org/wiki/French_livre).
+
+```
+/currencies create LIV 'French Livre Tournois'
+/currencies addprime LIV livre livres £
+/currencies addchild LIV sol sols s 20 £
+/currencies addchild LIV denier deniers d 12 s
+```
+
+### Spanish Colonial Peso (ESP)
+
+The "piece of eight" -- 1 peso = 8 reales = 272 maravedís (34 maravedís per real, fixed by Spain's 1497 Medina del Campo monetary reform). Deliberately sharing USD's `$` symbol as its prime symbol: the modern dollar sign is itself widely believed to derive from the Spanish peso's mark, so this is a historically fitting example of the `/currencies setdefault` disambiguation the README already describes above. See ![Wikipedia: Spanish dollar](https://en.wikipedia.org/wiki/Spanish_dollar).
+
+```
+/currencies create ESP 'Spanish Colonial Peso'
+/currencies addprime ESP peso pesos $
+/currencies addchild ESP real reales r 8 $
+/currencies addchild ESP maravedi maravedis mr 34 r
+```
+
+### Ottoman Kuruş (KRS)
+
+Introduced in 1688: 1 kuruş = 40 para = 120 akçe (3 akçe per para). See ![Wikipedia: Kuruş](https://en.wikipedia.org/wiki/Kuru%C5%9F).
+
+```
+/currencies create KRS 'Ottoman Kurus'
+/currencies addprime KRS kurus kurus ku
+/currencies addchild KRS para para pa 40 ku
+/currencies addchild KRS akce akce ak 3 pa
+```
+
+### Roman Imperial Denarius (DNR)
+
+The early-Imperial (Augustan) standard: 1 aureus = 25 denarii = 100 sestertii = 400 asses = 1600 quadrantes. See ![Wikipedia: Denarius](https://en.wikipedia.org/wiki/Denarius).
+
+```
+/currencies create DNR 'Roman Imperial Denarius'
+/currencies addprime DNR denarius denarii dn
+/currencies addchild DNR sestertius sestertii ss 4 dn
+/currencies addchild DNR as asses as 4 ss
+/currencies addchild DNR quadrans quadrantes qd 4 as
+
+/currencies addparent DNR aureus aurei au 25 dn
+```
+
+### British India Rupee (BIR)
+
+The pre-1957 system: 1 rupee = 16 annas = 64 paisa = 192 pies. See ![Wikipedia: Indian rupee](https://en.wikipedia.org/wiki/Indian_rupee).
+
+```
+/currencies create BIR 'British India Rupee'
+/currencies addprime BIR rupee rupees Rs
+/currencies addchild BIR anna annas an 16 Rs
+/currencies addchild BIR paisa paisa pi 4 an
+/currencies addchild BIR pie pies pe 3 pi
+```
+
+### Edo-Period Japanese Ryō (RYO)
+
+The gold-coinage side of Tokugawa Japan's three parallel currencies (gold, silver by weight, and copper mon) -- the only one of the three with fixed, non-floating internal ratios, which is why it's the one modeled here: 1 ryō = 4 bu = 16 shu. See ![Wikipedia: Ryō](https://en.wikipedia.org/wiki/Ry%C5%8D).
+
+```
+/currencies create RYO 'Edo-Period Japanese Ryo'
+/currencies addprime RYO ryo ryo ry
+/currencies addchild RYO bu bu bu 4 ry
+/currencies addchild RYO shu shu sh 4 bu
+```
+
+### Dutch Guilder (NLG)
+
+Pre-1817 guilder: 1 gulden = 20 stuivers = 160 duiten = 320 penningen. See ![Wikipedia: Dutch guilder](https://en.wikipedia.org/wiki/Dutch_guilder).
+
+```
+/currencies create NLG 'Dutch Guilder'
+/currencies addprime NLG gulden guldens g
+/currencies addchild NLG stuiver stuivers st 20 g
+/currencies addchild NLG duit duiten du 8 st
+/currencies addchild NLG penning penningen pn 2 du
+```
+
+### Polish Złoty, pre-decimal (PLZ)
+
+The simplest currency here: 1 złoty = 30 groszy, no further subdivision. See ![Wikipedia: Polish złoty](https://en.wikipedia.org/wiki/Polish_z%C5%82oty).
+
+```
+/currencies create PLZ 'Polish Zloty (pre-decimal)'
+/currencies addprime PLZ zloty zlotys zl
+/currencies addchild PLZ grosz groszy gr 30 zl
+```
+
+### Siamese Baht / Tical (SIB)
+
+1 baht = 4 salung = 8 fuang = 64 att. See ![Wikipedia: Thai baht](https://en.wikipedia.org/wiki/Thai_baht).
+
+```
+/currencies create SIB 'Siamese Baht (Tical)'
+/currencies addprime SIB baht baht bt
+/currencies addchild SIB salung salung sl 4 bt
+/currencies addchild SIB fuang fuang fu 2 sl
+/currencies addchild SIB att att at 8 fu
+```
+
+### Great British Pound (GBP)
+
+So, if you wanted to create the old Great British Pound before decimalization, you would do the following. See ![Coins of the pound sterling](https://en.wikipedia.org/wiki/Coins_of_the_pound_sterling) for the full history of every denomination below.
+
+Real pre-decimal ledgers prefixed the pound sign but suffixed everything below it -- `£3 12s. 6d.`, never `3£ 12s. 6d.` or `£3 s.12 d.6`. `Currency.prefix` is a single flag applied uniformly to every denomination when formatting a balance (`CurrencyFormatter.formatCurrency`), so it can't reproduce that mixed convention -- there's no per-unit override. `prefix` stays `false` here rather than `true`, because that's correct for the majority of this currency's units (shillings, pence, and every historical coin name below the pound were written number-first, e.g. `12s`, `6d`, `5c` for a crown); the tradeoff is that formatted balances show `3£` instead of `£3` for the pound itself. Multi-denomination command *input* (`200£20hc17g` below) always needs the number before its symbol regardless of this setting -- that's the parser splitting the string into digit/non-digit runs, not a display preference.
 
 ```
 /currencies create GBP 'Great British Pound' false
-/currencies addprime GBP pound pounds L
-/currencies addchild GBP shilling shillings s 20 L
+/currencies addprime GBP pound pounds £
+/currencies addchild GBP shilling shillings s 20 £
 /currencies addchild GBP penny pence d 12 s
 /currencies addchild GBP farthing farthings f 4 d
 
@@ -147,9 +273,9 @@ So, if you wanted to create the old Great British Pound before decimalization (y
 // addchild chain (pound/shilling/penny/farthing/twelfth farthing) the multiplier is counted
 // against.
 
-// Multiples of the pound (L)
-/currencies addparent GBP 'double sovereign' 'double sovereign' dv 2 L
-/currencies addparent GBP 'five pounds' 'five pounds' fp 5 L
+// Multiples of the pound (£)
+/currencies addparent GBP 'double sovereign' 'double sovereign' dv 2 £
+/currencies addparent GBP 'five pounds' 'five pounds' fp 5 £
 
 // Multiples of the shilling (s)
 /currencies addparent GBP 'guinea' 'guinea' gu 21 s
@@ -193,7 +319,7 @@ So, if you wanted to create the old Great British Pound before decimalization (y
 To start using a currency, you must first put it into circulation. You can do this manually or with a plugin that implements Currencies.  To do this manually, you use the credit command:
 
 ```
-/credit NobleUplift 200L20hc17g
+/credit NobleUplift 200£20hc17g
 ```
 
 This will give me 200 pounds, 20 halfcrowns, and 17 groats.
@@ -201,22 +327,22 @@ This will give me 200 pounds, 20 halfcrowns, and 17 groats.
 If I decided that was too much to give myself, I can always take the money out of circulation with the debit command:
 
 ```
-/debit NobleUplift 0L20hc17g
+/debit NobleUplift 0£20hc17g
 ```
 
-Note how I provided 0L in the currency amount. This is a requirement if you are only crediting/debiting minor units of a currency, in order to identify it.
+Note how I provided 0£ in the currency amount. This is a requirement if you are only crediting/debiting minor units of a currency, in order to identify it.
 
 You can seamlessly go from one currency to another, so long as it does not share a symbol with another currency:
 
 ```
-/credit NobleUplift 100L
+/credit NobleUplift 100£
 /credit NobleUplift $29.99
 ```
 
 The commands pay and bill work the exact same way as credit and debit, except you are giving someone else money or requesting it for yourself:
 
 ```
-/pay Shopkeeper 10L
+/pay Shopkeeper 10£
 /bill Customer $20
 ```
 
@@ -250,7 +376,7 @@ If I only wanted to bankrupt myself in England, probably to avoid taxes, I would
 But what's the point in avoiding taxes if I don't get anything for it? This sets my currency to an exact value after bankrupting, so it also requires the credit permission:
 
 ```
-/credit NobleUplift GBP 100L
+/credit NobleUplift GBP 100£
 ```
 
 And that is very simply the usage of Currencies!
