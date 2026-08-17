@@ -11,4 +11,8 @@ public class CurrenciesRuntimeException extends RuntimeException {
 	public CurrenciesRuntimeException(String message) {
 		super(message);
 	}
+
+	public CurrenciesRuntimeException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

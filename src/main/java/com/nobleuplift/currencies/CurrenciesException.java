@@ -11,4 +11,8 @@ public class CurrenciesException extends Exception {
 	protected CurrenciesException(String message) {
 		super(message);
 	}
+
+	protected CurrenciesException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

@@ -119,10 +119,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in createCurrency: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in createCurrency: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in createCurrency: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in createCurrency: " + e.getMessage(), e);
         }
     }
 
@@ -150,10 +150,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in deleteCurrency: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in deleteCurrency: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in deleteCurrency: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in deleteCurrency: " + e.getMessage(), e);
         }
     }
 
@@ -199,10 +199,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in addPrime: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in addPrime: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in addPrime: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in addPrime: " + e.getMessage(), e);
         }
     }
 
@@ -304,10 +304,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in addParent: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in addParent: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in addParent: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in addParent: " + e.getMessage(), e);
         }
     }
 
@@ -394,10 +394,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in addChild: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in addChild: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in addChild: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in addChild: " + e.getMessage(), e);
         }
     }
 
@@ -427,10 +427,10 @@ public final class CurrenciesCore {
                 return result;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in list: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in list: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in list: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in list: " + e.getMessage(), e);
         }
     }
 
@@ -520,10 +520,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in openAccount: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in openAccount: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in openAccount: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in openAccount: " + e.getMessage(), e);
         }
     }
 
@@ -545,10 +545,10 @@ public final class CurrenciesCore {
                 conn.commit();
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in setDefault: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in setDefault: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in setDefault: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in setDefault: " + e.getMessage(), e);
         }
     }
 
@@ -595,10 +595,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in balance: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in balance: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in balance: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in balance: " + e.getMessage(), e);
         }
     }
 
@@ -660,10 +660,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in pay: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in pay: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in pay: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in pay: " + e.getMessage(), e);
         }
     }
 
@@ -748,10 +748,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in bill: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in bill: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in bill: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in bill: " + e.getMessage(), e);
         }
     }
 
@@ -844,10 +844,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in processBill: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in processBill: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in processBill: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in processBill: " + e.getMessage(), e);
         }
     }
 
@@ -905,10 +905,10 @@ public final class CurrenciesCore {
                 return result;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in transactions: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in transactions: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in transactions: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in transactions: " + e.getMessage(), e);
         }
     }
 
@@ -948,10 +948,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in credit: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in credit: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in credit: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in credit: " + e.getMessage(), e);
         }
     }
 
@@ -987,10 +987,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in debit: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in debit: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in debit: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in debit: " + e.getMessage(), e);
         }
     }
 
@@ -1079,10 +1079,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in bankrupt: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in bankrupt: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in bankrupt: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in bankrupt: " + e.getMessage(), e);
         }
     }
 
@@ -1110,7 +1110,7 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             return queryAccountById(conn, id);
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getAccountById(" + id + "): " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in getAccountById(" + id + "): " + e.getMessage(), e);
         }
     }
 
@@ -1131,7 +1131,7 @@ public final class CurrenciesCore {
         } catch (CurrenciesRuntimeException e) {
             throw e;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getAccountFromPlayer: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in getAccountFromPlayer: " + e.getMessage(), e);
         }
     }
 
@@ -1145,7 +1145,7 @@ public final class CurrenciesCore {
         } catch (CurrenciesRuntimeException e) {
             throw e;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getAccountFromUniqueId: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in getAccountFromUniqueId: " + e.getMessage(), e);
         }
     }
 
@@ -1159,7 +1159,7 @@ public final class CurrenciesCore {
         } catch (CurrenciesRuntimeException e) {
             throw e;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getCurrency: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in getCurrency: " + e.getMessage(), e);
         }
     }
 
@@ -1173,7 +1173,7 @@ public final class CurrenciesCore {
         } catch (CurrenciesRuntimeException e) {
             throw e;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getCurrencyFromAcronym: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in getCurrencyFromAcronym: " + e.getMessage(), e);
         }
     }
 
@@ -1187,7 +1187,7 @@ public final class CurrenciesCore {
         } catch (CurrenciesRuntimeException e) {
             throw e;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getUnit: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in getUnit: " + e.getMessage(), e);
         }
     }
 
@@ -1201,7 +1201,7 @@ public final class CurrenciesCore {
         } catch (CurrenciesRuntimeException e) {
             throw e;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getBaseUnit: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in getBaseUnit: " + e.getMessage(), e);
         }
     }
 
@@ -1215,7 +1215,7 @@ public final class CurrenciesCore {
         } catch (CurrenciesRuntimeException e) {
             throw e;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getPrimeUnit: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in getPrimeUnit: " + e.getMessage(), e);
         }
     }
 
@@ -1238,7 +1238,7 @@ public final class CurrenciesCore {
             }
             return retval;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in getUnits: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in getUnits: " + e.getMessage(), e);
         }
     }
 
@@ -1328,7 +1328,7 @@ public final class CurrenciesCore {
 
             return retval;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in formatCurrency: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in formatCurrency: " + e.getMessage(), e);
         }
     }
 
@@ -1397,7 +1397,7 @@ public final class CurrenciesCore {
         } catch (CurrenciesException e) {
             throw e;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in parseCurrency: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in parseCurrency: " + e.getMessage(), e);
         }
 
         if (Currencies.DEBUG) {
@@ -1497,7 +1497,7 @@ public final class CurrenciesCore {
         } catch (CurrenciesException e) {
             throw e;
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Database error in resolveCurrency: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Database error in resolveCurrency: " + e.getMessage(), e);
         }
     }
 
@@ -1520,10 +1520,10 @@ public final class CurrenciesCore {
                 throw e;
             } catch (SQLException e) {
                 conn.rollback();
-                throw new CurrenciesRuntimeException("Database error in transferAmount: " + e.getMessage());
+                throw new CurrenciesRuntimeException("Database error in transferAmount: " + e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CurrenciesRuntimeException("Failed to get connection in transferAmount: " + e.getMessage());
+            throw new CurrenciesRuntimeException("Failed to get connection in transferAmount: " + e.getMessage(), e);
         }
     }
 
