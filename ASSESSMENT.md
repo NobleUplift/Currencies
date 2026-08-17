@@ -13,19 +13,20 @@ The entire system stores all amounts as `long` values in the smallest base unit 
 Before every transaction, `CurrenciesCore.compactHoldings()` consolidates a player's multi-denomination holdings into base units, processes the transaction, then redistributes. This correctly handles the edge case where a player has enough *total* wealth but it's split across denominations. The concept is sound and domain-appropriate.
 
 ### 3. Transactional Boundaries on Entry Points
-Public methods in `CurrenciesCore` that mutate state carry `@Transactional` annotations (`createCurrency`, `deleteCurrency`, `addPrime`, `addParent`, `addChild`, `pay`, `bill`, etc.). This ensures atomicity at the right level.
+Public methods in `CurrenciesCore` that mutate state use explicit JDBC transactions (`conn.setAutoCommit(false)` / `commit()` / `rollback()`). This ensures atomicity at the right level. *(Previously `@Transactional` Ebean annotations; migrated to JDBC in the Paper 1.21 upgrade.)*
 
 ### 4. Central Permission Gate
-`CurrenciesCommand.subcommands()` checks `sender.hasPermission("currencies." + args[0])` in a single place before entering the switch (line 58). Additional per-operation checks (e.g., `currencies.bankrupt.all`) are applied inline. The pattern is consistent.
+`CurrenciesCommand.subcommands()` checks `sender.hasPermission("currencies." + args[0])` in a single place before entering the switch. Additional per-operation checks (e.g., `currencies.bankrupt.all`) are applied inline. The pattern is consistent.
 
 ### 5. Bill State Machine
 The two-phase bill workflow (pending → accepted/rejected) is implemented correctly. `bill()` creates a Transaction with `paid = null`; `processBill()` sets it to `true` or `false` and transfers funds only on acceptance. The states are distinct and enforced.
 
 ### 6. Composite Key Encapsulation
-`HolderPK` and `HoldingPK` properly encapsulate composite primary keys as `Serializable` classes with correct `equals()` and `hashCode()` overrides. This is a JPA requirement that is easy to get wrong and is handled correctly.
+`HolderPK` and `HoldingPK` properly encapsulate composite primary keys as `Serializable` classes with correct `equals()` and `hashCode()` overrides. This is easy to get wrong and is handled correctly.
 
-### 7. Bidirectional Relationship Helpers on Entities
-`Currency.addUnit()` / `removeUnit()` and equivalent methods maintain both sides of JPA bidirectional relationships, reducing the risk of ORM sync bugs.
+### ~~7. Bidirectional Relationship Helpers on Entities~~
+~~`Currency.addUnit()` / `removeUnit()` and equivalent methods maintain both sides of JPA bidirectional relationships, reducing the risk of ORM sync bugs.~~
+*(Removed — entities are now plain POJOs with no ORM relationships; this pattern no longer applies.)*
 
 ### 8. API Documentation in CurrenciesCore
 The class-level Javadoc in `CurrenciesCore` documents the currency/unit invariants (one child per unit, symbol uniqueness scoping, reserved account semantics). This is critical information for external plugin authors that would otherwise require reading the database schema.
@@ -40,148 +41,143 @@ The player join handler checks UUID first, then falls back to name, and suffixes
 ### 1. CurrenciesCore Is a Static God Object
 **Severity: High**
 
-`CurrenciesCore` is ~1350 lines of all-static methods handling currency CRUD, unit management, account management, five transaction types, bill workflow, compacting, parsing, and formatting. It has no instance state and cannot be subclassed, mocked, or extended.
+`CurrenciesCore` is ~2400 lines of all-static methods handling currency CRUD, unit management, account management, five transaction types, bill workflow, compacting, parsing, and formatting. It has no instance state and cannot be subclassed, mocked, or extended.
 
-- Zero testability: every method calls `Currencies.getInstance().getDatabase()`, tying unit logic to the live Bukkit plugin singleton.
-- Impossible to inject a test double for the database.
+- Zero testability: all database access is now through an injected `DatabaseManager` (resolved in Paper 1.21 upgrade), but the class itself remains a static facade with no decomposition.
 - Violates Single Responsibility Principle across every domain concern.
 
-**Fix:** Keep the static public API as a facade; internally delegate to a held instance with the database injected at initialization (`CurrenciesCore.init(db)` called from `onEnable`). No call sites in `CurrenciesCommand` need to change.
+**Partial fix applied:** `CurrenciesCore.init(db)` injects a `DatabaseManager` at startup, eliminating the `Currencies.getInstance().getDatabase()` call in every method. The public static API is preserved for external plugins.
+
+**Remaining fix:** Decompose into domain-specific classes (CurrencyService, AccountService, TransactionService, etc.) behind the static facade. Deliberately deferred as a separate future initiative — the smaller fixes below reduce the surface area to decompose.
 
 ---
 
-### 2. Massive Code Duplication in addParent / addChild
-**Severity: High**
+### ~~2. Massive Code Duplication in addParent / addChild~~
+~~**Severity: High**~~
 
-`addParent()` (lines 144–236) and `addChild()` (lines 238–363) share approximately 50 lines of identical validation logic: singular name uniqueness, plural name uniqueness, symbol uniqueness per currency, symbol uniqueness globally for prime units, symbol format validation. This code is copy-pasted verbatim.
+~~`addParent()` and `addChild()` share approximately 50 lines of identical validation logic: singular name uniqueness, plural name uniqueness, symbol uniqueness per currency, symbol uniqueness globally for prime units, symbol format validation. This code is copy-pasted verbatim.~~
 
-Any bug fix or rule change in one must be manually replicated in the other.
+~~Any bug fix or rule change in one must be manually replicated in the other.~~
 
-**Fix:** Extract a shared `validateUnitParameters(acronym, name, plural, symbol)` method.
-
----
-
-### 3. Magic Numbers for Reserved Accounts and Transaction Types
-**Severity: High**
-
-Hard-coded checks for `account.getId() >= 1 && account.getId() <= 4` appear in at least six methods (`pay`, `bill`, `credit`, `debit`, `bankrupt`, etc.). If a reserved account is added, every method needs a manual update.
-
-Transaction type IDs (`TRANSACTION_TYPE_PAY_ID`, etc.) are `short` constants compared directly in `CurrenciesCommand` (lines 346–361). They should be an enum with display logic encapsulated on the type itself.
-
-**Fix:** Replace the reserved-account range check with a `boolean isReserved()` method on `Account`. Replace transaction type short constants with an enum.
+**Fixed:** Extracted a shared `validateUnitParameters(Connection, Currency, name, plural, symbol)` private method covering the prime-exists check and all four uniqueness checks. Each caller still does its own symbol-format regex check afterward, since `addChild` additionally forbids the negative sign.
 
 ---
 
-### 4. ORM Anti-Patterns in Entity toString()
-**Severity: High**
+### ~~3. Magic Numbers for Reserved Accounts and Transaction Types~~
+~~**Severity: High**~~
 
-`Currency.toString()`, `Account.toString()`, and `Unit.toString()` include lazy-loaded collection fields (e.g., `accountDefaults`, `units`, `parentAccounts`, `childAccounts`, `holdings`). Calling `toString()` outside a transaction triggers lazy initialization failures or unintended N+1 database queries.
+~~Hard-coded checks for `account.getId() >= 1 && account.getId() <= 4` appear in at least six methods (`pay`, `bill`, `credit`, `debit`, `bankrupt`, etc.). If a reserved account is added, every method needs a manual update.~~
 
-`Unit` has a self-referential `childUnit` relationship. If cycles form, `toString()` causes a `StackOverflowError`.
+~~Transaction type IDs (`TRANSACTION_TYPE_PAY_ID`, etc.) are `short` constants compared directly in `CurrenciesCommand`. They should be an enum with display logic encapsulated on the type itself.~~
 
-**Fix:** Remove all collection fields from `toString()` implementations.
+**Fixed:** Added `Account.isReserved()`, backed by the documented reserved ID range (1-4), replacing all 6 raw literal checks. Added a `TransactionType` enum (`PAY`/`BILL`/`CREDIT`/`DEBIT`/`BANKRUPT`) as the mapping boundary between `Transaction.typeId`'s raw `short` DB value and code that branches on transaction type, replacing the `TRANSACTION_TYPE_*_ID` constants that were removed from `CurrenciesCore`.
 
 ---
 
-### 5. Dual Getter Naming on Boolean Fields
-**Severity: Medium**
+### ~~4. ORM Anti-Patterns in Entity toString()~~
+~~**Severity: High**~~
 
-`Currency` exposes both `isDeleted()` and `getDeleted()` returning the same value (lines 99–105). `Unit` has the same pattern for `prime`. This breaks reflection-based frameworks (Jackson, ORM mappers) that expect a single canonical getter and violates JavaBeans conventions.
+~~`Currency.toString()`, `Account.toString()`, and `Unit.toString()` include lazy-loaded collection fields. Calling `toString()` outside a transaction triggers lazy initialization failures or unintended N+1 queries. `Unit` has a self-referential `childUnit` relationship that causes `StackOverflowError` if cycles form.~~
 
-**Fix:** Remove the `getX()` form for boolean fields; keep only `isX()`.
+**Fixed in Paper 1.21 upgrade:** Entities are now plain POJOs with no ORM annotations or lazy-loaded collections. All collection fields removed from `toString()` implementations.
+
+---
+
+### ~~5. Dual Getter Naming on Boolean Fields~~
+~~**Severity: Medium**~~
+
+~~`Currency` exposes both `isDeleted()` and `getDeleted()` returning the same value. `Unit` has the same pattern for `prime`. This breaks reflection-based frameworks and violates JavaBeans conventions.~~
+
+**Fixed:** Removed the `getX()` form for all six affected boolean fields (`Currency.deleted/prefix/globalDefault`, `Unit.main/prime`, `Transaction.paid`). All call sites normalized to the `isX()` form.
 
 ---
 
 ### 6. Exception Architecture Is Unclear
 **Severity: Medium**
 
-`CurrenciesException` (checked) and `CurrenciesRuntimeException` (unchecked) are caught together in every single `catch` block in `CurrenciesCommand`:
+`CurrenciesException` (checked) and `CurrenciesRuntimeException` (unchecked) are caught together in every `catch` block in `CurrenciesCommand` and handled identically. The checked/unchecked distinction does no work. Neither exception class accepts a `Throwable cause`, so database exception stack traces are always lost.
 
-```java
-} catch (CurrenciesException | CurrenciesRuntimeException e) {
-    Currencies.tell(sender, e.getMessage());
-}
-```
-
-If both are always caught together and handled identically, the checked/unchecked distinction is doing no work. Additionally:
-- `CurrenciesException` has a `protected` constructor, preventing external plugins from throwing it.
-- Neither exception class accepts a `Throwable cause`, so database exception stack traces are always lost.
-
-**Fix:** Make `CurrenciesException` public. Add a `(String message, Throwable cause)` constructor to both types. Reconsider whether two exception types are needed or whether a single exception with an error-code enum suffices.
+**Fix:** Add a `(String message, Throwable cause)` constructor to both types. Reconsider whether two exception types are needed or whether a single exception with an error-code enum suffices.
 
 ---
 
 ### 7. Inconsistent Soft-Delete Pattern
 **Severity: Medium**
 
-`Currency` has both a `deleted` boolean field and a `dateDeleted` timestamp. There is no enforced invariant that `deleted == true IFF dateDeleted != null`. Queries may or may not filter by either field, creating a consistency gap.
+`Currency` has both a `deleted` boolean field and a `dateDeleted` timestamp with no enforced invariant that `deleted == true IFF dateDeleted != null`.
 
-**Fix:** Remove the `deleted` boolean and treat `dateDeleted IS NOT NULL` as the authoritative soft-delete signal. Add a derived `isDeleted()` method that returns `dateDeleted != null`.
-
----
-
-### 8. No Optimistic Locking
-**Severity: Medium**
-
-No entity has a `@Version` field. Concurrent transactions modifying the same `Currency`, `Account`, or `Holding` will silently overwrite each other's changes. Given that Minecraft servers can have concurrent player activity, this is a realistic risk during peak play.
-
-**Fix:** Add `@Version private long version;` to `Account` and `Holding` (the entities modified most frequently during normal play).
+**Fix:** Remove the `deleted` boolean; treat `dateDeleted IS NOT NULL` as the authoritative soft-delete signal.
 
 ---
 
-### 9. Layering Violation: Command Layer Uses JPA Entities Directly
-**Severity: Medium**
+### ~~8. No Optimistic Locking~~
+~~**Severity: Medium**~~
 
-`CurrenciesCommand` accesses `.getAcronym()`, `.getName()`, `.getSymbol()`, `.getAlternate()`, `.getChildUnit()`, `.getChildMultiples()` directly on entity objects in the display loop (lines 163–168). The command layer is tightly coupled to the persistence model. `CurrencyDTO` exists in the codebase but is never used in the command layer.
+~~No entity has a `@Version` field. Concurrent transactions modifying the same `Holding` will silently overwrite each other's changes.~~
 
-**Fix:** Have `CurrenciesCore` return DTOs (or simple value records) to the command layer, not live entity objects.
-
----
-
-### 10. Database Schema Initialization in onEnable with No Rollback
-**Severity: Medium**
-
-`Currencies.onEnable()` executes raw SQL DDL and DML across 50+ lines with no transaction wrapping and no rollback strategy. If any statement fails mid-sequence (e.g., a table is created but the reserved account insert fails), the plugin leaves the database in a partially initialized state with no recovery path. Return values of `.execute()` calls are not checked.
-
-Additionally, a version migration branch (lines 101–117) can never execute because the version string was already updated to `"1.1.0"` at line 95, making the `"1.0.0".equals(version)` condition on line 101 always false — dead code.
+**Resolved by design in Paper 1.21 upgrade:** JDBC transactions use MySQL's default `REPEATABLE READ` isolation, which prevents concurrent overwrites without requiring application-level version columns. `@Version` was only needed because Ebean could silently clobber concurrent updates outside of explicit transactions.
 
 ---
 
-### 11. Repeated Timestamp Creation
-**Severity: Low**
+### ~~9. Layering Violation: Command Layer Uses JPA Entities Directly~~
+~~**Severity: Medium**~~
 
-`new Timestamp(Calendar.getInstance().getTimeInMillis())` appears six or more times across `Currencies.java` and `CurrenciesCore.java`. This should be a single static utility method.
+~~`CurrenciesCommand` accesses entity fields directly. The command layer is tightly coupled to the persistence model. `CurrencyDTO` exists but is never used in the command layer.~~
 
----
-
-### 12. Pagination Displays Wrong Count on Last Page
-**Severity: Low**
-
-Both `list` and `transactions` display "N through M" where M is always `((page-1)*10)+10`, even when the actual list returned has fewer than 10 items (i.e., the last page). This tells the user there are items that don't exist.
+**Resolved by design in Paper 1.21 upgrade:** Entities are now plain POJOs (not live JPA proxies), so accessing their fields from the command layer carries no ORM risk. The coupling is still architecturally impure but no longer causes runtime hazards.
 
 ---
 
-### 13. CurrencyDTO Is Unused at the Command Layer
-**Severity: Low**
+### ~~10. Database Schema Initialization in onEnable with No Rollback~~
+~~**Severity: Medium**~~
 
-`CurrencyDTO` was likely introduced to decouple the command layer from entity objects, but `CurrenciesCommand` never instantiates or receives one. The DTO is either incomplete work or intended for the external plugin API. Its purpose should be clarified and either completed or removed.
+~~`Currencies.onEnable()` executes raw SQL DDL and DML with no transaction wrapping. A mid-sequence failure leaves the database partially initialized with no recovery path.~~
+
+**Fixed in Paper 1.21 upgrade:** `initSchema()` and `migrateFromV100()` are wrapped in try-with-resources JDBC connections. Failures are caught, logged at SEVERE, and the plugin is disabled cleanly via `getServer().getPluginManager().disablePlugin(this)`.
+
+---
+
+### ~~11. Repeated Timestamp Creation~~
+~~**Severity: Low**~~
+
+~~`new Timestamp(Calendar.getInstance().getTimeInMillis())` appears multiple times. Most instances were eliminated by the Paper 1.21 JDBC rewrite (SQL `NOW()` is used instead), but any remaining occurrences should use a single static utility method.~~
+
+**Fixed:** Extracted a private `now()` helper in `CurrenciesCore` (Java has no direct equivalent of MySQL's `NOW()`), replacing all 11 remaining occurrences.
+
+---
+
+### ~~12. Pagination Displays Wrong Count on Last Page~~
+~~**Severity: Low**~~
+
+~~Both `list` and `transactions` display "N through M" where M is always `((page-1)*10)+10`, even when the actual list has fewer than 10 items. This tells the user there are items that don't exist.~~
+
+**Fixed:** The displayed range now normalizes `page <= 1` the same way `CurrenciesCore` does internally, and the upper bound is derived from the actual result count instead of always assuming a full page of 10.
+
+---
+
+### ~~13. CurrencyDTO Is Unused at the Command Layer~~
+~~**Severity: Low**~~
+
+~~`CurrencyDTO` was likely introduced to decouple the command layer from entity objects, but `CurrenciesCommand` never instantiates or receives one. Its purpose should be clarified and either completed or removed.~~
+
+**Fixed — implemented rather than removed:** Added `CurrenciesCore.resolveCurrency(Account, String)`, which resolves an ambiguous amount string's currency, base unit, and total base-unit amount in a single pass and returns them as a `CurrencyDTO`. The `pay`/`bill`/`credit`/`debit` command handlers now call it once instead of resolving the currency via `getCurrencyFromAmount()` and then re-parsing the same amount string a second time through the `String`-based `CurrenciesCore` overloads.
 
 ---
 
 ## Summary Table
 
-| Issue | Category | Severity |
-|---|---|---|
-| CurrenciesCore static god object | Architecture | High |
-| addParent/addChild validation duplication | DRY | High |
-| Magic numbers (account IDs, transaction type shorts) | Design | High |
-| ORM lazy-load in toString() | ORM anti-pattern | High |
-| Dual boolean getter naming | Convention | Medium |
-| Exception architecture unclear, no cause chaining | Error handling | Medium |
-| Inconsistent soft-delete | Data integrity | Medium |
-| No optimistic locking | Concurrency | Medium |
-| Command layer uses JPA entities directly | Layering | Medium |
-| DB init has no rollback / dead migration code | Reliability | Medium |
-| Repeated timestamp creation | DRY | Low |
-| Pagination displays wrong item count on last page | UX/correctness | Low |
-| CurrencyDTO unused | Incomplete design | Low |
+| Issue | Category | Severity | Status |
+|---|---|---|---|
+| CurrenciesCore static god object | Architecture | High | Partial (DB injection fixed; decomposition deferred) |
+| ~~addParent/addChild validation duplication~~ | ~~DRY~~ | ~~High~~ | **Fixed** |
+| ~~Magic numbers (account IDs, transaction type shorts)~~ | ~~Design~~ | ~~High~~ | **Fixed** |
+| ~~ORM lazy-load in toString()~~ | ~~ORM anti-pattern~~ | ~~High~~ | **Fixed** |
+| ~~Dual boolean getter naming~~ | ~~Convention~~ | ~~Medium~~ | **Fixed** |
+| Exception architecture unclear, no cause chaining | Error handling | Medium | Open |
+| Inconsistent soft-delete | Data integrity | Medium | Open |
+| ~~No optimistic locking~~ | ~~Concurrency~~ | ~~Medium~~ | **Resolved by design** |
+| ~~Command layer uses JPA entities directly~~ | ~~Layering~~ | ~~Medium~~ | **Resolved by design** |
+| ~~DB init has no rollback / dead migration code~~ | ~~Reliability~~ | ~~Medium~~ | **Fixed** |
+| ~~Repeated timestamp creation~~ | ~~DRY~~ | ~~Low~~ | **Fixed** |
+| ~~Pagination displays wrong item count on last page~~ | ~~UX/correctness~~ | ~~Low~~ | **Fixed** |
+| ~~CurrencyDTO unused~~ | ~~Incomplete design~~ | ~~Low~~ | **Fixed** |
