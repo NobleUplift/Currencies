@@ -19,6 +19,8 @@ import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
 import com.nobleuplift.currencies.entities.TransactionType;
 import com.nobleuplift.currencies.entities.Unit;
+import com.nobleuplift.currencies.service.CurrencyRepository;
+import com.nobleuplift.currencies.service.JdbcCurrencyRepository;
 
 /**
  * This class is the main interface for accessing Currencies
@@ -59,6 +61,7 @@ public final class CurrenciesCore {
     public static final int THE_ENDERMAN_MARKETEER = 4;
 
     private static DatabaseManager db;
+    private static final CurrencyRepository repository = new JdbcCurrencyRepository();
 
     public static void init(DatabaseManager databaseManager) {
         db = databaseManager;
@@ -130,7 +133,7 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Currency c = queryCurrencyByAcronym(conn, acronym);
+                Currency c = repository.queryCurrencyByAcronym(conn, acronym);
                 if (c == null) {
                     throw new CurrenciesException("Could not find currency with acronym " + acronym + ".");
                 }
@@ -161,13 +164,13 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Currency c = queryCurrencyByAcronym(conn, acronym);
+                Currency c = repository.queryCurrencyByAcronym(conn, acronym);
                 if (c == null) {
                     throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
                 }
 
                 // Check no prime unit already exists
-                Unit existingPrime = queryPrimeUnit(conn, c);
+                Unit existingPrime = repository.queryPrimeUnit(conn, c);
                 if (existingPrime != null) {
                     throw new CurrenciesException("Currency " + acronym + " already has a prime unit of currency.");
                 }
@@ -213,31 +216,31 @@ public final class CurrenciesCore {
      */
     private static void validateUnitParameters(Connection conn, Currency currency, String name, String plural, String symbol)
             throws SQLException, CurrenciesException {
-        Unit prime = queryPrimeUnit(conn, currency);
+        Unit prime = repository.queryPrimeUnit(conn, currency);
         if (prime == null) {
             throw new CurrenciesException("Currency " + currency.getAcronym() + " does not have a prime unit.");
         }
 
         // Validate singular name
-        Unit singularUnit = queryUnitByName(conn, currency, name);
+        Unit singularUnit = repository.queryUnitByName(conn, currency, name);
         if (singularUnit != null) {
             throw new CurrenciesException("Unit with name " + name + " already exists for this currency.");
         }
 
         // Validate plural name
-        Unit pluralUnit = queryUnitByAlternate(conn, currency, plural);
+        Unit pluralUnit = repository.queryUnitByAlternate(conn, currency, plural);
         if (pluralUnit != null) {
             throw new CurrenciesException("Unit with plural name " + plural + " already exists for this currency.");
         }
 
         // Validate symbol uniqueness within currency
-        Unit symbolUnit = queryUnitBySymbolAndCurrency(conn, currency, symbol);
+        Unit symbolUnit = repository.queryUnitBySymbolAndCurrency(conn, currency, symbol);
         if (symbolUnit != null) {
             throw new CurrenciesException("Unit with symbol " + symbol + " already exists for currency " + currency.getAcronym() + ".");
         }
 
         // Validate symbol not already a prime symbol of another currency
-        Unit primeUnit = queryPrimeUnitBySymbol(conn, symbol);
+        Unit primeUnit = repository.queryPrimeUnitBySymbol(conn, symbol);
         if (primeUnit != null) {
             throw new CurrenciesException("Unit with symbol " + symbol + " is a prime unit for another currency.");
         }
@@ -251,7 +254,7 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Currency c = queryCurrencyByAcronym(conn, acronym);
+                Currency c = repository.queryCurrencyByAcronym(conn, acronym);
                 if (c == null) {
                     throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
                 }
@@ -262,7 +265,7 @@ public final class CurrenciesCore {
                 }
 
                 // Find child unit
-                Unit childUnit = queryUnitBySymbolAndCurrency(conn, c, child);
+                Unit childUnit = repository.queryUnitBySymbolAndCurrency(conn, c, child);
                 if (childUnit == null) {
                     throw new CurrenciesException("Child unit " + child + " does not exist for currency " + acronym + ".");
                 }
@@ -272,7 +275,7 @@ public final class CurrenciesCore {
                 }
 
                 // Validate no existing parent with same child and base_multiples == multiplier
-                Unit multiplierUnit = queryUnitByChildAndBaseMultiples(conn, c, childUnit, multiplier);
+                Unit multiplierUnit = repository.queryUnitByChildAndBaseMultiples(conn, c, childUnit, multiplier);
                 if (multiplierUnit != null) {
                     throw new CurrenciesException("A parent of " + child + " with multiplier " + multiplier + " already exists.");
                 }
@@ -315,7 +318,7 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Currency c = queryCurrencyByAcronym(conn, acronym);
+                Currency c = repository.queryCurrencyByAcronym(conn, acronym);
                 if (c == null) {
                     throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
                 }
@@ -326,7 +329,7 @@ public final class CurrenciesCore {
                 }
 
                 // Validate parent unit
-                Unit parentUnit = queryUnitBySymbolAndCurrency(conn, c, parent);
+                Unit parentUnit = repository.queryUnitBySymbolAndCurrency(conn, c, parent);
                 if (parentUnit == null) {
                     throw new CurrenciesException("Unit " + parent + " does not exist.");
                 }
@@ -339,7 +342,7 @@ public final class CurrenciesCore {
                 }
 
                 // Get all units for this currency and update their base_multiples
-                List<Unit> units = queryAllUnitsForCurrency(conn, c);
+                List<Unit> units = repository.queryAllUnitsForCurrency(conn, c);
                 Timestamp now = now();
                 for (Unit u : units) {
                     if (u.getId().equals(parentUnit.getId())) {
@@ -412,17 +415,7 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                List<Currency> result = new ArrayList<>();
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT id, name, acronym, prefix, default_currency, date_created, date_modified, date_deleted"
-                        + " FROM currencies_currency WHERE date_deleted IS NULL LIMIT 10 OFFSET ?")) {
-                    ps.setInt(1, offset);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            result.add(mapCurrencyFromRow(rs));
-                        }
-                    }
-                }
+                List<Currency> result = repository.queryCurrenciesPage(conn, offset);
                 conn.commit();
                 return result;
             } catch (SQLException e) {
@@ -564,24 +557,24 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Account account = queryAccountByName(conn, player);
+                Account account = repository.queryAccountByName(conn, player);
                 if (account == null) {
                     throw new CurrenciesException("Account " + player + " does not exist.");
                 }
 
                 Map<Currency, Long> result;
                 if (acronym == null) {
-                    List<Holding> holdings = queryHoldingsWithUnitAndCurrency(conn, account.getId());
+                    List<Holding> holdings = repository.queryHoldingsWithUnitAndCurrency(conn, account.getId());
                     result = summateHoldings(holdings);
                 } else {
-                    Currency c = queryCurrencyByAcronym(conn, acronym);
+                    Currency c = repository.queryCurrencyByAcronym(conn, acronym);
                     if (c == null) {
                         throw new CurrenciesException("Currency with acronym " + acronym + " does not exist.");
                     }
 
-                    List<Holding> holdings = queryHoldingsForAccountAndCurrency(conn, account.getId(), c.getId());
+                    List<Holding> holdings = repository.queryHoldingsForAccountAndCurrency(conn, account.getId(), c.getId());
                     if (holdings.isEmpty()) {
-                        Unit pu = queryPrimeUnit(conn, c);
+                        Unit pu = repository.queryPrimeUnit(conn, c);
                         String unitName = (pu != null) ? pu.getAlternate() : acronym;
                         throw new CurrenciesException("Account " + player + " does not own any " + unitName + ".");
                     }
@@ -633,12 +626,12 @@ public final class CurrenciesCore {
             try {
                 compactHoldings(conn, fromAccount);
 
-                Unit baseUnit = queryBaseUnit(conn, currency);
+                Unit baseUnit = repository.queryBaseUnit(conn, currency);
                 if (baseUnit == null) {
                     throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
                 }
 
-                Holding baseHolding = queryBaseHolding(conn, fromAccount.getId(), baseUnit.getId());
+                Holding baseHolding = repository.queryBaseHolding(conn, fromAccount.getId(), baseUnit.getId());
                 if (baseHolding == null) {
                     throw new CurrenciesException("You have 0" + baseUnit.getSymbol() + ". You cannot pay "
                             + formatCurrency(currency, baseAmount) + " to " + toAccount.getName() + ".");
@@ -696,7 +689,7 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Unit base = queryBaseUnit(conn, currency);
+                Unit base = repository.queryBaseUnit(conn, currency);
                 if (base == null) {
                     throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
                 }
@@ -767,7 +760,7 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Account account = queryAccountByName(conn, from);
+                Account account = repository.queryAccountByName(conn, from);
                 if (account == null) {
                     throw new CurrenciesRuntimeException("Account " + from + " does not exist.");
                 }
@@ -775,7 +768,7 @@ public final class CurrenciesCore {
                 Transaction t = null;
                 if (transaction == null) {
                     // Find all pending bills where this account is the sender (the one who must pay)
-                    List<Transaction> pendingBills = queryPendingBillsForSender(conn, account.getId());
+                    List<Transaction> pendingBills = repository.queryPendingBillsForSender(conn, account.getId());
                     if (pendingBills.size() > 1) {
                         throw new CurrenciesException(
                                 "You have more than one bill pending. Please specify the transaction ID. You can find it by running /transactions.");
@@ -785,7 +778,7 @@ public final class CurrenciesCore {
                         t = pendingBills.get(0);
                     }
                 } else {
-                    t = queryTransactionById(conn, Long.parseLong(transaction));
+                    t = repository.queryTransactionById(conn, Long.parseLong(transaction));
                     if (t == null) {
                         throw new CurrenciesException("Transaction " + transaction + " does not exist.");
                     }
@@ -806,12 +799,12 @@ public final class CurrenciesCore {
                     compactHoldings(conn, account);
 
                     Currency currency = t.getUnit().getCurrency();
-                    Unit baseUnit = queryBaseUnit(conn, currency);
+                    Unit baseUnit = repository.queryBaseUnit(conn, currency);
                     if (baseUnit == null) {
                         throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
                     }
 
-                    Holding baseHolding = queryBaseHolding(conn, account.getId(), baseUnit.getId());
+                    Holding baseHolding = repository.queryBaseHolding(conn, account.getId(), baseUnit.getId());
                     if (baseHolding == null) {
                         throw new CurrenciesException("You have 0" + baseUnit.getSymbol() + ". You cannot pay "
                                 + formatCurrency(currency, t.getTransactionAmount()) + " to " + t.getRecipient().getName() + ".");
@@ -865,41 +858,12 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Account account = queryAccountByName(conn, player);
+                Account account = repository.queryAccountByName(conn, player);
                 if (account == null) {
                     throw new CurrenciesRuntimeException("Account " + player + " does not exist.");
                 }
 
-                List<Transaction> result = new ArrayList<>();
-                String sql = "SELECT t.id, t.sender_id, t.recipient_id, t.unit_id, t.type_id,"
-                        + " t.transaction_amount, t.final_sender_amount, t.final_recipient_amount,"
-                        + " t.paid, t.date_paid, t.date_created,"
-                        + " sa.id AS sa_id, sa.name AS sa_name,"
-                        + " ra.id AS ra_id, ra.name AS ra_name,"
-                        + " u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name,"
-                        + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
-                        + " u.child_multiples, u.base_multiples,"
-                        + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                        + " c.default_currency AS c_global_default"
-                        + " FROM currencies_transaction t"
-                        + " JOIN currencies_account sa ON t.sender_id = sa.id"
-                        + " JOIN currencies_account ra ON t.recipient_id = ra.id"
-                        + " JOIN currencies_unit u ON t.unit_id = u.id"
-                        + " JOIN currencies_currency c ON u.currency_id = c.id"
-                        + " WHERE (t.sender_id = ? OR t.recipient_id = ?)"
-                        + " ORDER BY t.date_created DESC"
-                        + " LIMIT 10 OFFSET ?";
-
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setInt(1, account.getId());
-                    ps.setInt(2, account.getId());
-                    ps.setInt(3, offset);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            result.add(mapTransactionWithRelations(rs));
-                        }
-                    }
-                }
+                List<Transaction> result = repository.queryTransactionsForAccountPage(conn, account.getId(), offset);
 
                 conn.commit();
                 return result;
@@ -1010,12 +974,12 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Account account = queryAccountByName(conn, player);
+                Account account = repository.queryAccountByName(conn, player);
                 if (account == null) {
                     throw new CurrenciesRuntimeException("Account " + player + " does not exist.");
                 }
-                Account centralBanker = queryAccountById(conn, MINECRAFT_CENTRAL_BANKER);
-                Account centralBank = queryAccountById(conn, MINECRAFT_CENTRAL_BANK);
+                Account centralBanker = repository.queryAccountById(conn, MINECRAFT_CENTRAL_BANKER);
+                Account centralBank = repository.queryAccountById(conn, MINECRAFT_CENTRAL_BANK);
 
                 List<Holding> holdings;
 
@@ -1025,11 +989,11 @@ public final class CurrenciesCore {
 
                     compactHoldings(conn, account);
 
-                    holdings = queryHoldingsForAccountAndCurrency(conn, account.getId(), currency.getId());
+                    holdings = repository.queryHoldingsForAccountAndCurrency(conn, account.getId(), currency.getId());
 
                     for (Holding h : holdings) {
                         if (h.getAmount() == 0) {
-                            deleteHolding(conn, account.getId(), h.getUnit().getId());
+                            repository.deleteHolding(conn, account.getId(), h.getUnit().getId());
                             continue;
                         }
                         Transaction t = privateTransferAmount(conn, account, centralBanker, currency, h.getAmount());
@@ -1044,11 +1008,11 @@ public final class CurrenciesCore {
                 } else if (acronym != null) {
                     Currency currency = getCurrencyFromAcronym(acronym, true);
 
-                    holdings = queryHoldingsForAccountAndCurrency(conn, account.getId(), currency.getId());
+                    holdings = repository.queryHoldingsForAccountAndCurrency(conn, account.getId(), currency.getId());
 
                     for (Holding h : holdings) {
                         if (h.getAmount() == 0) {
-                            deleteHolding(conn, account.getId(), h.getUnit().getId());
+                            repository.deleteHolding(conn, account.getId(), h.getUnit().getId());
                             continue;
                         }
                         Transaction t = privateTransferAmount(conn, account, centralBanker, currency, h.getAmount());
@@ -1058,11 +1022,11 @@ public final class CurrenciesCore {
 
                 } else {
                     // Delete all holdings — need unit+currency populated
-                    holdings = queryHoldingsWithUnitAndCurrency(conn, account.getId());
+                    holdings = repository.queryHoldingsWithUnitAndCurrency(conn, account.getId());
 
                     for (Holding h : holdings) {
                         if (h.getAmount() == 0) {
-                            deleteHolding(conn, account.getId(), h.getUnit().getId());
+                            repository.deleteHolding(conn, account.getId(), h.getUnit().getId());
                             continue;
                         }
                         Currency hCurrency = h.getUnit().getCurrency();
@@ -1108,7 +1072,7 @@ public final class CurrenciesCore {
 
     private static Account getAccountById(int id) {
         try (Connection conn = db.getConnection()) {
-            return queryAccountById(conn, id);
+            return repository.queryAccountById(conn, id);
         } catch (SQLException e) {
             throw new CurrenciesRuntimeException("Database error in getAccountById(" + id + "): " + e.getMessage(), e);
         }
@@ -1123,7 +1087,7 @@ public final class CurrenciesCore {
      */
     public static Account getAccountFromPlayer(String player, boolean exception) throws CurrenciesRuntimeException {
         try (Connection conn = db.getConnection()) {
-            Account account = queryAccountByName(conn, player);
+            Account account = repository.queryAccountByName(conn, player);
             if (account == null && exception) {
                 throw new CurrenciesRuntimeException("Account " + player + " does not exist.");
             }
@@ -1137,7 +1101,7 @@ public final class CurrenciesCore {
 
     public static Account getAccountFromUniqueId(String uuid, boolean exception) throws CurrenciesRuntimeException {
         try (Connection conn = db.getConnection()) {
-            Account account = queryAccountByUuid(conn, uuid);
+            Account account = repository.queryAccountByUuid(conn, uuid);
             if (account == null && exception) {
                 throw new CurrenciesRuntimeException("Account with UUID " + uuid + " does not exist.");
             }
@@ -1151,7 +1115,7 @@ public final class CurrenciesCore {
 
     public static Currency getCurrency(short id, boolean exception) throws CurrenciesRuntimeException {
         try (Connection conn = db.getConnection()) {
-            Currency currency = queryCurrencyById(conn, id);
+            Currency currency = repository.queryCurrencyById(conn, id);
             if (currency == null && exception) {
                 throw new CurrenciesRuntimeException("Currency with ID " + id + " does not exist.");
             }
@@ -1165,7 +1129,7 @@ public final class CurrenciesCore {
 
     public static Currency getCurrencyFromAcronym(String acronym, boolean exception) throws CurrenciesRuntimeException {
         try (Connection conn = db.getConnection()) {
-            Currency currency = queryCurrencyByAcronym(conn, acronym);
+            Currency currency = repository.queryCurrencyByAcronym(conn, acronym);
             if (currency == null && exception) {
                 throw new CurrenciesRuntimeException("Currency " + acronym + " does not exist.");
             }
@@ -1179,7 +1143,7 @@ public final class CurrenciesCore {
 
     public static Unit getUnit(short id, boolean exception) throws CurrenciesRuntimeException {
         try (Connection conn = db.getConnection()) {
-            Unit unit = queryUnitById(conn, id);
+            Unit unit = repository.queryUnitById(conn, id);
             if (unit == null && exception) {
                 throw new CurrenciesRuntimeException("Unit with ID " + id + " does not exist.");
             }
@@ -1193,7 +1157,7 @@ public final class CurrenciesCore {
 
     public static Unit getBaseUnit(Currency currency, boolean exception) throws CurrenciesRuntimeException {
         try (Connection conn = db.getConnection()) {
-            Unit base = queryBaseUnit(conn, currency);
+            Unit base = repository.queryBaseUnit(conn, currency);
             if (base == null && exception) {
                 throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
             }
@@ -1207,7 +1171,7 @@ public final class CurrenciesCore {
 
     public static Unit getPrimeUnit(Currency currency, boolean exception) throws CurrenciesRuntimeException {
         try (Connection conn = db.getConnection()) {
-            Unit prime = queryPrimeUnit(conn, currency);
+            Unit prime = repository.queryPrimeUnit(conn, currency);
             if (prime == null && exception) {
                 throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no prime unit.");
             }
@@ -1222,7 +1186,7 @@ public final class CurrenciesCore {
     public static Map<Short, Unit> getUnits(Currency currency) {
         try (Connection conn = db.getConnection()) {
             // Load units with their child unit populated for display in the list command
-            List<Unit> units = queryUnitsOrdered(conn, currency);
+            List<Unit> units = repository.queryUnitsOrdered(conn, currency);
             Map<Short, Unit> retval = new HashMap<>();
             for (Unit u : units) {
                 retval.put(u.getId(), u);
@@ -1288,7 +1252,7 @@ public final class CurrenciesCore {
 
     public static String formatCurrency(Currency currency, long amount) {
         try (Connection conn = db.getConnection()) {
-            List<Unit> units = queryMainUnitsForCurrencyDescending(conn, currency);
+            List<Unit> units = repository.queryMainUnitsForCurrencyDescending(conn, currency);
 
             String retval = "";
             if (amount < 0) {
@@ -1363,7 +1327,7 @@ public final class CurrenciesCore {
                 }
 
                 if (part.matches("\\D+")) {
-                    partUnit = queryUnitBySymbolAndCurrency(conn, currency, part);
+                    partUnit = repository.queryUnitBySymbolAndCurrency(conn, currency, part);
                     if (partUnit == null) {
                         throw new CurrenciesException(part + " is not a valid symbol.");
                     }
@@ -1437,7 +1401,7 @@ public final class CurrenciesCore {
                 if (!part.matches("\\D+")) {
                     continue;
                 }
-                List<Unit> primes = queryPrimeUnitsBySymbol(conn, part);
+                List<Unit> primes = repository.queryPrimeUnitsBySymbol(conn, part);
 
                 if (primes.size() == 1) {
                     if (currency != null) {
@@ -1462,7 +1426,7 @@ public final class CurrenciesCore {
                 throw new CurrenciesException("No prime unit was located in your currency string.");
             }
 
-            Unit baseUnit = queryBaseUnit(conn, currency);
+            Unit baseUnit = repository.queryBaseUnit(conn, currency);
             if (baseUnit == null) {
                 throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
             }
@@ -1472,7 +1436,7 @@ public final class CurrenciesCore {
             Long partAmount = null;
             for (String part : parts) {
                 if (part.matches("\\D+")) {
-                    partUnit = queryUnitBySymbolAndCurrency(conn, currency, part);
+                    partUnit = repository.queryUnitBySymbolAndCurrency(conn, currency, part);
                     if (partUnit == null) {
                         throw new CurrenciesException(part + " is not a valid symbol.");
                     }
@@ -1543,7 +1507,7 @@ public final class CurrenciesCore {
      */
     private static int compactHoldings(Connection conn, Account account) throws SQLException {
         // Find all non-base holdings (where unit.child_unit_id IS NOT NULL)
-        List<Holding> nonBaseHoldings = queryNonBaseHoldings(conn, account.getId());
+        List<Holding> nonBaseHoldings = repository.queryNonBaseHoldings(conn, account.getId());
 
         if (Currencies.DEBUG) {
             System.out.println("Non-base holdings: " + nonBaseHoldings);
@@ -1558,7 +1522,7 @@ public final class CurrenciesCore {
         }
 
         // Get all base holdings (where unit.child_unit_id IS NULL)
-        List<Holding> baseHoldings = queryBaseHoldings(conn, account.getId());
+        List<Holding> baseHoldings = repository.queryBaseHoldings(conn, account.getId());
 
         if (Currencies.DEBUG) {
             System.out.println("Base holdings: " + baseHoldings);
@@ -1572,13 +1536,13 @@ public final class CurrenciesCore {
 
         for (Holding h : nonBaseHoldings) {
             if (h.getAmount() == 0) {
-                deleteHolding(conn, account.getId(), h.getUnit().getId());
+                repository.deleteHolding(conn, account.getId(), h.getUnit().getId());
                 continue;
             }
 
             Unit nonBaseUnit = h.getUnit();
             // We need the base unit for this currency
-            Unit baseUnit = queryBaseUnit(conn, nonBaseUnit.getCurrency());
+            Unit baseUnit = repository.queryBaseUnit(conn, nonBaseUnit.getCurrency());
             if (baseUnit == null) {
                 // If there's no base unit this is unusual — skip
                 continue;
@@ -1606,8 +1570,8 @@ public final class CurrenciesCore {
             long newBaseAmount = baseHolding.getAmount() + baseAmount;
             baseHolding.setAmount(newBaseAmount);
 
-            upsertHolding(conn, account.getId(), baseUnit.getId(), newBaseAmount);
-            deleteHolding(conn, account.getId(), nonBaseUnit.getId());
+            repository.upsertHolding(conn, account.getId(), baseUnit.getId(), newBaseAmount);
+            repository.deleteHolding(conn, account.getId(), nonBaseUnit.getId());
         }
 
         return nonBaseHoldings.size();
@@ -1620,13 +1584,13 @@ public final class CurrenciesCore {
     private static Transaction privateTransferAmount(Connection conn, Account fromAccount, Account toAccount,
             Currency currency, long amount) throws SQLException, CurrenciesException {
 
-        Unit base = queryBaseUnit(conn, currency);
+        Unit base = repository.queryBaseUnit(conn, currency);
         if (base == null) {
             throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base unit.");
         }
 
         // Get or create from holding
-        Holding fromHolding = queryBaseHolding(conn, fromAccount.getId(), base.getId());
+        Holding fromHolding = repository.queryBaseHolding(conn, fromAccount.getId(), base.getId());
         long fromCurrentAmount = (fromHolding != null) ? fromHolding.getAmount() : 0L;
         long fromAmount = fromCurrentAmount - amount;
 
@@ -1636,14 +1600,14 @@ public final class CurrenciesCore {
 
         if (fromAmount == 0) {
             if (fromHolding != null) {
-                deleteHolding(conn, fromAccount.getId(), base.getId());
+                repository.deleteHolding(conn, fromAccount.getId(), base.getId());
             }
         } else {
-            upsertHolding(conn, fromAccount.getId(), base.getId(), fromAmount);
+            repository.upsertHolding(conn, fromAccount.getId(), base.getId(), fromAmount);
         }
 
         // Get or create to holding
-        Holding toHolding = queryBaseHolding(conn, toAccount.getId(), base.getId());
+        Holding toHolding = repository.queryBaseHolding(conn, toAccount.getId(), base.getId());
         long toCurrentAmount = (toHolding != null) ? toHolding.getAmount() : 0L;
         long toAmount = toCurrentAmount + amount;
 
@@ -1651,7 +1615,7 @@ public final class CurrenciesCore {
             Currencies.getInstance().getLogger().info("CREDIT - TO AMOUNT: " + toAmount);
         }
 
-        upsertHolding(conn, toAccount.getId(), base.getId(), toAmount);
+        repository.upsertHolding(conn, toAccount.getId(), base.getId(), toAmount);
 
         Timestamp now = now();
 
@@ -1719,727 +1683,4 @@ public final class CurrenciesCore {
         return -1L;
     }
 
-    // =========================================================================
-    // Query helpers — all accept an open Connection
-    // =========================================================================
-
-    private static Account queryAccountByName(Connection conn, String name) throws SQLException {
-        String sql = "SELECT a.id, a.name, a.uuid, a.default_currency_id, a.date_created, a.date_modified,"
-                + " c.id AS dc_id, c.name AS dc_name, c.acronym AS dc_acronym, c.prefix AS dc_prefix,"
-                + " c.default_currency AS dc_global_default"
-                + " FROM currencies_account a"
-                + " LEFT JOIN currencies_currency c ON a.default_currency_id = c.id"
-                + " WHERE a.name = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, name);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapAccountWithDefaultCurrency(rs);
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Account queryAccountByUuid(Connection conn, String uuid) throws SQLException {
-        String sql = "SELECT a.id, a.name, a.uuid, a.default_currency_id, a.date_created, a.date_modified,"
-                + " c.id AS dc_id, c.name AS dc_name, c.acronym AS dc_acronym, c.prefix AS dc_prefix,"
-                + " c.default_currency AS dc_global_default"
-                + " FROM currencies_account a"
-                + " LEFT JOIN currencies_currency c ON a.default_currency_id = c.id"
-                + " WHERE a.uuid = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, uuid);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapAccountWithDefaultCurrency(rs);
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Account queryAccountById(Connection conn, int id) throws SQLException {
-        String sql = "SELECT a.id, a.name, a.uuid, a.default_currency_id, a.date_created, a.date_modified,"
-                + " c.id AS dc_id, c.name AS dc_name, c.acronym AS dc_acronym, c.prefix AS dc_prefix,"
-                + " c.default_currency AS dc_global_default"
-                + " FROM currencies_account a"
-                + " LEFT JOIN currencies_currency c ON a.default_currency_id = c.id"
-                + " WHERE a.id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapAccountWithDefaultCurrency(rs);
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Currency queryCurrencyById(Connection conn, short id) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, name, acronym, prefix, default_currency, date_created, date_modified, date_deleted"
-                + " FROM currencies_currency WHERE id = ?")) {
-            ps.setShort(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapCurrencyFromRow(rs);
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Currency queryCurrencyByAcronym(Connection conn, String acronym) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, name, acronym, prefix, default_currency, date_created, date_modified, date_deleted"
-                + " FROM currencies_currency WHERE acronym = ?")) {
-            ps.setString(1, acronym);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapCurrencyFromRow(rs);
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Unit queryUnitById(Connection conn, short id) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name, u.alternate AS u_alternate, u.symbol,"
-                + " u.prime, u.main, u.child_multiples, u.base_multiples,"
-                + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.default_currency AS c_global_default"
-                + " FROM currencies_unit u"
-                + " JOIN currencies_currency c ON u.currency_id = c.id"
-                + " WHERE u.id = ?")) {
-            ps.setShort(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapUnitWithCurrency(rs);
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Unit queryBaseUnit(Connection conn, Currency currency) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id, u.currency_id, u.child_unit_id, u.name, u.alternate, u.symbol,"
-                + " u.prime, u.main, u.child_multiples, u.base_multiples"
-                + " FROM currencies_unit u"
-                + " WHERE u.currency_id = ? AND u.child_unit_id IS NULL"
-                + " LIMIT 1")) {
-            ps.setShort(1, currency.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Unit u = mapUnitBasic(rs);
-                    u.setCurrency(currency);
-                    return u;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Unit queryPrimeUnit(Connection conn, Currency currency) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id, u.currency_id, u.child_unit_id, u.name, u.alternate, u.symbol,"
-                + " u.prime, u.main, u.child_multiples, u.base_multiples"
-                + " FROM currencies_unit u"
-                + " WHERE u.currency_id = ? AND u.prime = 1"
-                + " LIMIT 1")) {
-            ps.setShort(1, currency.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Unit u = mapUnitBasic(rs);
-                    u.setCurrency(currency);
-                    return u;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Unit queryUnitBySymbolAndCurrency(Connection conn, Currency currency, String symbol) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id, u.currency_id, u.child_unit_id, u.name, u.alternate, u.symbol,"
-                + " u.prime, u.main, u.child_multiples, u.base_multiples"
-                + " FROM currencies_unit u"
-                + " WHERE u.currency_id = ? AND u.symbol = ?"
-                + " LIMIT 1")) {
-            ps.setShort(1, currency.getId());
-            ps.setString(2, symbol);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Unit u = mapUnitBasic(rs);
-                    u.setCurrency(currency);
-                    // Load child unit reference (id only stub) if present
-                    short childUnitId = rs.getShort("child_unit_id");
-                    if (!rs.wasNull() && childUnitId != 0) {
-                        Unit childStub = new Unit();
-                        childStub.setId(childUnitId);
-                        u.setChildUnit(childStub);
-                    }
-                    return u;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Unit queryUnitByName(Connection conn, Currency currency, String name) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id FROM currencies_unit u WHERE u.currency_id = ? AND u.name = ? LIMIT 1")) {
-            ps.setShort(1, currency.getId());
-            ps.setString(2, name);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Unit u = new Unit();
-                    u.setId(rs.getShort("id"));
-                    return u;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Unit queryUnitByAlternate(Connection conn, Currency currency, String alternate) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id FROM currencies_unit u WHERE u.currency_id = ? AND u.alternate = ? LIMIT 1")) {
-            ps.setShort(1, currency.getId());
-            ps.setString(2, alternate);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Unit u = new Unit();
-                    u.setId(rs.getShort("id"));
-                    return u;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Unit queryPrimeUnitBySymbol(Connection conn, String symbol) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id FROM currencies_unit u WHERE u.symbol = ? AND u.prime = 1 LIMIT 1")) {
-            ps.setString(1, symbol);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Unit u = new Unit();
-                    u.setId(rs.getShort("id"));
-                    return u;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Unit queryUnitByChildAndBaseMultiples(Connection conn, Currency currency, Unit childUnit, int baseMultiples) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id FROM currencies_unit u"
-                + " WHERE u.currency_id = ? AND u.child_unit_id = ? AND u.base_multiples = ? LIMIT 1")) {
-            ps.setShort(1, currency.getId());
-            ps.setShort(2, childUnit.getId());
-            ps.setInt(3, baseMultiples);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Unit u = new Unit();
-                    u.setId(rs.getShort("id"));
-                    return u;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static List<Unit> queryAllUnitsForCurrency(Connection conn, Currency currency) throws SQLException {
-        List<Unit> result = new ArrayList<>();
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id, u.currency_id, u.child_unit_id, u.name, u.alternate, u.symbol,"
-                + " u.prime, u.main, u.child_multiples, u.base_multiples"
-                + " FROM currencies_unit u WHERE u.currency_id = ?")) {
-            ps.setShort(1, currency.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Unit u = mapUnitBasic(rs);
-                    u.setCurrency(currency);
-                    short childId = rs.getShort("child_unit_id");
-                    if (!rs.wasNull() && childId != 0) {
-                        Unit childStub = new Unit();
-                        childStub.setId(childId);
-                        u.setChildUnit(childStub);
-                    }
-                    result.add(u);
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Query units ordered for the getUnits() display method.
-     * Returns units with child_unit_id stubs set for later resolution.
-     */
-    private static List<Unit> queryUnitsOrdered(Connection conn, Currency currency) throws SQLException {
-        List<Unit> result = new ArrayList<>();
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id, u.currency_id, u.child_unit_id, u.name, u.alternate, u.symbol,"
-                + " u.prime, u.main, u.child_multiples, u.base_multiples"
-                + " FROM currencies_unit u"
-                + " WHERE u.currency_id = ?"
-                + " ORDER BY u.prime DESC, u.main DESC, u.base_multiples DESC")) {
-            ps.setShort(1, currency.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Unit u = mapUnitBasic(rs);
-                    u.setCurrency(currency);
-                    short childId = rs.getShort("child_unit_id");
-                    if (!rs.wasNull() && childId != 0) {
-                        Unit childStub = new Unit();
-                        childStub.setId(childId);
-                        u.setChildUnit(childStub);
-                    }
-                    result.add(u);
-                }
-            }
-        }
-        return result;
-    }
-
-    private static List<Unit> queryMainUnitsForCurrencyDescending(Connection conn, Currency currency) throws SQLException {
-        List<Unit> result = new ArrayList<>();
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id, u.currency_id, u.child_unit_id, u.name, u.alternate, u.symbol,"
-                + " u.prime, u.main, u.child_multiples, u.base_multiples"
-                + " FROM currencies_unit u"
-                + " WHERE u.currency_id = ? AND u.main = 1"
-                + " ORDER BY u.base_multiples DESC")) {
-            ps.setShort(1, currency.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Unit u = mapUnitBasic(rs);
-                    u.setCurrency(currency);
-                    short childId = rs.getShort("child_unit_id");
-                    if (!rs.wasNull() && childId != 0) {
-                        Unit childStub = new Unit();
-                        childStub.setId(childId);
-                        u.setChildUnit(childStub);
-                    }
-                    result.add(u);
-                }
-            }
-        }
-        return result;
-    }
-
-    private static List<Unit> queryPrimeUnitsBySymbol(Connection conn, String symbol) throws SQLException {
-        List<Unit> result = new ArrayList<>();
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name, u.alternate AS u_alternate, u.symbol,"
-                + " u.prime, u.main, u.child_multiples, u.base_multiples,"
-                + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.default_currency AS c_global_default"
-                + " FROM currencies_unit u"
-                + " JOIN currencies_currency c ON u.currency_id = c.id"
-                + " WHERE u.symbol = ? AND u.prime = 1")) {
-            ps.setString(1, symbol);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    result.add(mapUnitWithCurrency(rs));
-                }
-            }
-        }
-        return result;
-    }
-
-    private static Holding queryBaseHolding(Connection conn, int accountId, short unitId) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT h.account_id, h.unit_id, h.amount"
-                + " FROM currencies_holding h"
-                + " WHERE h.account_id = ? AND h.unit_id = ?")) {
-            ps.setInt(1, accountId);
-            ps.setShort(2, unitId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Holding h = new Holding();
-                    HoldingPK pk = new HoldingPK();
-                    pk.setAccountId(rs.getInt("account_id"));
-                    pk.setUnitId(rs.getShort("unit_id"));
-                    h.setId(pk);
-                    h.setAmount(rs.getLong("amount"));
-                    return h;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static List<Holding> queryHoldingsWithUnitAndCurrency(Connection conn, int accountId) throws SQLException {
-        List<Holding> result = new ArrayList<>();
-        String sql = "SELECT h.account_id, h.unit_id, h.amount,"
-                + " u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name,"
-                + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
-                + " u.child_multiples, u.base_multiples,"
-                + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.default_currency AS c_global_default"
-                + " FROM currencies_holding h"
-                + " JOIN currencies_unit u ON h.unit_id = u.id"
-                + " JOIN currencies_currency c ON u.currency_id = c.id"
-                + " WHERE h.account_id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, accountId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    result.add(mapHoldingWithUnitAndCurrency(rs));
-                }
-            }
-        }
-        return result;
-    }
-
-    private static List<Holding> queryHoldingsForAccountAndCurrency(Connection conn, int accountId, short currencyId) throws SQLException {
-        List<Holding> result = new ArrayList<>();
-        String sql = "SELECT h.account_id, h.unit_id, h.amount,"
-                + " u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name,"
-                + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
-                + " u.child_multiples, u.base_multiples,"
-                + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.default_currency AS c_global_default"
-                + " FROM currencies_holding h"
-                + " JOIN currencies_unit u ON h.unit_id = u.id"
-                + " JOIN currencies_currency c ON u.currency_id = c.id"
-                + " WHERE h.account_id = ? AND u.currency_id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, accountId);
-            ps.setShort(2, currencyId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    result.add(mapHoldingWithUnitAndCurrency(rs));
-                }
-            }
-        }
-        return result;
-    }
-
-    /** All holdings where the unit has a child (i.e., non-base holdings). */
-    private static List<Holding> queryNonBaseHoldings(Connection conn, int accountId) throws SQLException {
-        List<Holding> result = new ArrayList<>();
-        String sql = "SELECT h.account_id, h.unit_id, h.amount,"
-                + " u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name,"
-                + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
-                + " u.child_multiples, u.base_multiples,"
-                + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.default_currency AS c_global_default"
-                + " FROM currencies_holding h"
-                + " JOIN currencies_unit u ON h.unit_id = u.id"
-                + " JOIN currencies_currency c ON u.currency_id = c.id"
-                + " WHERE h.account_id = ? AND u.child_unit_id IS NOT NULL";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, accountId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    result.add(mapHoldingWithUnitAndCurrency(rs));
-                }
-            }
-        }
-        return result;
-    }
-
-    /** All holdings where the unit has no child (i.e., base holdings). */
-    private static List<Holding> queryBaseHoldings(Connection conn, int accountId) throws SQLException {
-        List<Holding> result = new ArrayList<>();
-        String sql = "SELECT h.account_id, h.unit_id, h.amount,"
-                + " u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name,"
-                + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
-                + " u.child_multiples, u.base_multiples,"
-                + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.default_currency AS c_global_default"
-                + " FROM currencies_holding h"
-                + " JOIN currencies_unit u ON h.unit_id = u.id"
-                + " JOIN currencies_currency c ON u.currency_id = c.id"
-                + " WHERE h.account_id = ? AND u.child_unit_id IS NULL";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, accountId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    result.add(mapHoldingWithUnitAndCurrency(rs));
-                }
-            }
-        }
-        return result;
-    }
-
-    private static List<Transaction> queryPendingBillsForSender(Connection conn, int senderId) throws SQLException {
-        List<Transaction> result = new ArrayList<>();
-        String sql = "SELECT t.id, t.sender_id, t.recipient_id, t.unit_id, t.type_id,"
-                + " t.transaction_amount, t.final_sender_amount, t.final_recipient_amount,"
-                + " t.paid, t.date_paid, t.date_created,"
-                + " sa.id AS sa_id, sa.name AS sa_name,"
-                + " ra.id AS ra_id, ra.name AS ra_name,"
-                + " u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name,"
-                + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
-                + " u.child_multiples, u.base_multiples,"
-                + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.default_currency AS c_global_default"
-                + " FROM currencies_transaction t"
-                + " JOIN currencies_account sa ON t.sender_id = sa.id"
-                + " JOIN currencies_account ra ON t.recipient_id = ra.id"
-                + " JOIN currencies_unit u ON t.unit_id = u.id"
-                + " JOIN currencies_currency c ON u.currency_id = c.id"
-                + " WHERE t.sender_id = ? AND t.paid IS NULL AND t.type_id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, senderId);
-            ps.setShort(2, TransactionType.BILL.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    result.add(mapTransactionWithRelations(rs));
-                }
-            }
-        }
-        return result;
-    }
-
-    private static Transaction queryTransactionById(Connection conn, long id) throws SQLException {
-        String sql = "SELECT t.id, t.sender_id, t.recipient_id, t.unit_id, t.type_id,"
-                + " t.transaction_amount, t.final_sender_amount, t.final_recipient_amount,"
-                + " t.paid, t.date_paid, t.date_created,"
-                + " sa.id AS sa_id, sa.name AS sa_name,"
-                + " ra.id AS ra_id, ra.name AS ra_name,"
-                + " u.id AS u_id, u.currency_id, u.child_unit_id, u.name AS u_name,"
-                + " u.alternate AS u_alternate, u.symbol, u.prime, u.main,"
-                + " u.child_multiples, u.base_multiples,"
-                + " c.id AS c_id, c.name AS c_name, c.acronym, c.prefix AS c_prefix,"
-                + " c.default_currency AS c_global_default"
-                + " FROM currencies_transaction t"
-                + " JOIN currencies_account sa ON t.sender_id = sa.id"
-                + " JOIN currencies_account ra ON t.recipient_id = ra.id"
-                + " JOIN currencies_unit u ON t.unit_id = u.id"
-                + " JOIN currencies_currency c ON u.currency_id = c.id"
-                + " WHERE t.id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapTransactionWithRelations(rs);
-                }
-            }
-        }
-        return null;
-    }
-
-    private static void upsertHolding(Connection conn, int accountId, short unitId, long amount) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO currencies_holding (account_id, unit_id, amount) VALUES (?, ?, ?)"
-                + " ON DUPLICATE KEY UPDATE amount = VALUES(amount)")) {
-            ps.setInt(1, accountId);
-            ps.setShort(2, unitId);
-            ps.setLong(3, amount);
-            ps.executeUpdate();
-        }
-    }
-
-    private static void deleteHolding(Connection conn, int accountId, short unitId) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "DELETE FROM currencies_holding WHERE account_id = ? AND unit_id = ?")) {
-            ps.setInt(1, accountId);
-            ps.setShort(2, unitId);
-            ps.executeUpdate();
-        }
-    }
-
-    // =========================================================================
-    // Mapper methods
-    // =========================================================================
-
-    private static Account mapAccountWithDefaultCurrency(ResultSet rs) throws SQLException {
-        Account a = new Account();
-        a.setId(rs.getInt("id"));
-        a.setName(rs.getString("name"));
-        a.setUuid(rs.getString("uuid"));
-        a.setDateCreated(rs.getTimestamp("date_created"));
-        a.setDateModified(rs.getTimestamp("date_modified"));
-
-        // Default currency (from LEFT JOIN, may be null)
-        int dcId = rs.getInt("dc_id");
-        if (!rs.wasNull() && dcId != 0) {
-            Currency dc = new Currency();
-            dc.setId((short) dcId);
-            dc.setName(rs.getString("dc_name"));
-            dc.setAcronym(rs.getString("dc_acronym"));
-            dc.setPrefix(rs.getBoolean("dc_prefix"));
-            dc.setGlobalDefault(rs.getBoolean("dc_global_default"));
-            a.setDefaultCurrency(dc);
-        }
-        return a;
-    }
-
-    private static Currency mapCurrencyFromRow(ResultSet rs) throws SQLException {
-        Currency c = new Currency();
-        c.setId(rs.getShort("id"));
-        c.setName(rs.getString("name"));
-        c.setAcronym(rs.getString("acronym"));
-        c.setPrefix(rs.getBoolean("prefix"));
-        c.setGlobalDefault(rs.getBoolean("default_currency"));
-        c.setDateCreated(rs.getTimestamp("date_created"));
-        c.setDateModified(rs.getTimestamp("date_modified"));
-        c.setDateDeleted(rs.getTimestamp("date_deleted"));
-        return c;
-    }
-
-    /**
-     * Map a unit row that has currency columns prefixed with c_.
-     */
-    private static Unit mapUnitWithCurrency(ResultSet rs) throws SQLException {
-        Unit u = new Unit();
-        u.setId(rs.getShort("u_id"));
-        u.setName(rs.getString("u_name"));
-        u.setAlternate(rs.getString("u_alternate"));
-        u.setSymbol(rs.getString("symbol"));
-        u.setPrime(rs.getBoolean("prime"));
-        u.setMain(rs.getBoolean("main"));
-        u.setChildMultiples(rs.getInt("child_multiples"));
-        u.setBaseMultiples(rs.getInt("base_multiples"));
-
-        short childUnitId = rs.getShort("child_unit_id");
-        if (!rs.wasNull() && childUnitId != 0) {
-            Unit childStub = new Unit();
-            childStub.setId(childUnitId);
-            u.setChildUnit(childStub);
-        }
-
-        Currency c = new Currency();
-        c.setId(rs.getShort("c_id"));
-        c.setName(rs.getString("c_name"));
-        c.setAcronym(rs.getString("acronym"));
-        c.setPrefix(rs.getBoolean("c_prefix"));
-        c.setGlobalDefault(rs.getBoolean("c_global_default"));
-        u.setCurrency(c);
-
-        return u;
-    }
-
-    /**
-     * Map a unit row with plain column names (no prefix), currency not populated.
-     */
-    private static Unit mapUnitBasic(ResultSet rs) throws SQLException {
-        Unit u = new Unit();
-        u.setId(rs.getShort("id"));
-        u.setName(rs.getString("name"));
-        u.setAlternate(rs.getString("alternate"));
-        u.setSymbol(rs.getString("symbol"));
-        u.setPrime(rs.getBoolean("prime"));
-        u.setMain(rs.getBoolean("main"));
-        u.setChildMultiples(rs.getInt("child_multiples"));
-        u.setBaseMultiples(rs.getInt("base_multiples"));
-        // child_unit_id loaded by caller when needed
-        return u;
-    }
-
-    private static Holding mapHoldingWithUnitAndCurrency(ResultSet rs) throws SQLException {
-        Holding h = new Holding();
-        HoldingPK pk = new HoldingPK();
-        pk.setAccountId(rs.getInt("account_id"));
-        pk.setUnitId(rs.getShort("unit_id"));
-        h.setId(pk);
-        h.setAmount(rs.getLong("amount"));
-
-        // Map unit
-        Unit u = new Unit();
-        u.setId(rs.getShort("u_id"));
-        u.setName(rs.getString("u_name"));
-        u.setAlternate(rs.getString("u_alternate"));
-        u.setSymbol(rs.getString("symbol"));
-        u.setPrime(rs.getBoolean("prime"));
-        u.setMain(rs.getBoolean("main"));
-        u.setChildMultiples(rs.getInt("child_multiples"));
-        u.setBaseMultiples(rs.getInt("base_multiples"));
-
-        short childUnitId = rs.getShort("child_unit_id");
-        if (!rs.wasNull() && childUnitId != 0) {
-            Unit childStub = new Unit();
-            childStub.setId(childUnitId);
-            u.setChildUnit(childStub);
-        }
-
-        // Map currency
-        Currency c = new Currency();
-        c.setId(rs.getShort("c_id"));
-        c.setName(rs.getString("c_name"));
-        c.setAcronym(rs.getString("acronym"));
-        c.setPrefix(rs.getBoolean("c_prefix"));
-        c.setGlobalDefault(rs.getBoolean("c_global_default"));
-
-        u.setCurrency(c);
-        h.setUnit(u);
-
-        return h;
-    }
-
-    private static Transaction mapTransactionWithRelations(ResultSet rs) throws SQLException {
-        Transaction t = new Transaction();
-        t.setId(rs.getLong("id"));
-        t.setTransactionAmount(rs.getLong("transaction_amount"));
-        t.setTypeId(rs.getShort("type_id"));
-
-        long fsa = rs.getLong("final_sender_amount");
-        t.setFinalSenderAmount(rs.wasNull() ? null : fsa);
-
-        long fra = rs.getLong("final_recipient_amount");
-        t.setFinalRecipientAmount(rs.wasNull() ? null : fra);
-
-        // paid: stored as TINYINT NULL — 0=false, 1=true, NULL=pending
-        Object paidObj = rs.getObject("paid");
-        if (paidObj == null) {
-            t.setPaid(null);
-        } else {
-            t.setPaid(rs.getBoolean("paid"));
-        }
-
-        t.setDateCreated(rs.getTimestamp("date_created"));
-        t.setDatePaid(rs.getTimestamp("date_paid"));
-
-        // Sender account (minimal — id + name)
-        Account sender = new Account();
-        sender.setId(rs.getInt("sa_id"));
-        sender.setName(rs.getString("sa_name"));
-        t.setSender(sender);
-
-        // Recipient account (minimal — id + name)
-        Account recipient = new Account();
-        recipient.setId(rs.getInt("ra_id"));
-        recipient.setName(rs.getString("ra_name"));
-        t.setRecipient(recipient);
-
-        // Unit with currency
-        Unit u = new Unit();
-        u.setId(rs.getShort("u_id"));
-        u.setName(rs.getString("u_name"));
-        u.setAlternate(rs.getString("u_alternate"));
-        u.setSymbol(rs.getString("symbol"));
-        u.setPrime(rs.getBoolean("prime"));
-        u.setMain(rs.getBoolean("main"));
-        u.setChildMultiples(rs.getInt("child_multiples"));
-        u.setBaseMultiples(rs.getInt("base_multiples"));
-
-        short childUnitId = rs.getShort("child_unit_id");
-        if (!rs.wasNull() && childUnitId != 0) {
-            Unit childStub = new Unit();
-            childStub.setId(childUnitId);
-            u.setChildUnit(childStub);
-        }
-
-        Currency c = new Currency();
-        c.setId(rs.getShort("c_id"));
-        c.setName(rs.getString("c_name"));
-        c.setAcronym(rs.getString("acronym"));
-        c.setPrefix(rs.getBoolean("c_prefix"));
-        c.setGlobalDefault(rs.getBoolean("c_global_default"));
-
-        u.setCurrency(c);
-        t.setUnit(u);
-
-        return t;
-    }
 }

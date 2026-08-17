@@ -7,7 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class DatabaseManager {
+public class DatabaseManager implements ConnectionProvider {
 
     private final HikariDataSource dataSource;
 
