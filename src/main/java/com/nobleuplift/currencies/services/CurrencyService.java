@@ -232,15 +232,18 @@ public class CurrencyService {
                     throw new CurrenciesException("Multiplier must be greater than one.");
                 }
 
-                // Validate no existing parent with same child and base_multiples == multiplier
-                Unit multiplierUnit = repository.queryUnitByChildAndBaseMultiples(conn, c, childUnit, multiplier);
-                if (multiplierUnit != null) {
-                    throw new CurrenciesException("A parent of " + child + " with multiplier " + multiplier + " already exists.");
-                }
-
                 int multiples = childUnit.getBaseMultiples() != 0
                         ? multiplier * childUnit.getBaseMultiples()
                         : multiplier;
+
+                // Validate no existing parent with same child and the same resulting base_multiples.
+                // Must compare against the computed `multiples`, not the raw `multiplier`: once the
+                // child unit is itself several tiers above the currency's base unit, the two values
+                // diverge and comparing against `multiplier` would silently miss real duplicates.
+                Unit multiplierUnit = repository.queryUnitByChildAndBaseMultiples(conn, c, childUnit, multiples);
+                if (multiplierUnit != null) {
+                    throw new CurrenciesException("A parent of " + child + " with multiplier " + multiplier + " already exists.");
+                }
 
                 Timestamp now = Clock.now();
                 try (PreparedStatement ps = conn.prepareStatement(
