@@ -19,6 +19,7 @@ import com.nobleuplift.currencies.entities.HoldingPK;
 import com.nobleuplift.currencies.entities.Transaction;
 import com.nobleuplift.currencies.entities.TransactionType;
 import com.nobleuplift.currencies.entities.Unit;
+import com.nobleuplift.currencies.service.Clock;
 import com.nobleuplift.currencies.service.CurrencyRepository;
 import com.nobleuplift.currencies.service.JdbcCurrencyRepository;
 
@@ -104,7 +105,7 @@ public final class CurrenciesCore {
                     }
                 }
 
-                Timestamp now = now();
+                Timestamp now = Clock.now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO currencies_currency (name, acronym, prefix, default_currency, date_created, date_modified, date_deleted)"
                         + " VALUES (?, ?, ?, 0, ?, ?, NULL)")) {
@@ -138,7 +139,7 @@ public final class CurrenciesCore {
                     throw new CurrenciesException("Could not find currency with acronym " + acronym + ".");
                 }
 
-                Timestamp now = now();
+                Timestamp now = Clock.now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "UPDATE currencies_currency SET date_deleted = ?, date_modified = ? WHERE id = ?")) {
                     ps.setTimestamp(1, now);
@@ -182,7 +183,7 @@ public final class CurrenciesCore {
                     throw new CurrenciesException("Symbol cannot contain numbers.");
                 }
 
-                Timestamp now = now();
+                Timestamp now = Clock.now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO currencies_unit"
                         + " (currency_id, child_unit_id, name, alternate, symbol, prime, main, child_multiples, base_multiples, date_created, date_modified)"
@@ -284,7 +285,7 @@ public final class CurrenciesCore {
                         ? multiplier * childUnit.getBaseMultiples()
                         : multiplier;
 
-                Timestamp now = now();
+                Timestamp now = Clock.now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO currencies_unit"
                         + " (currency_id, child_unit_id, name, alternate, symbol, prime, main, child_multiples, base_multiples, date_created, date_modified)"
@@ -343,7 +344,7 @@ public final class CurrenciesCore {
 
                 // Get all units for this currency and update their base_multiples
                 List<Unit> units = repository.queryAllUnitsForCurrency(conn, c);
-                Timestamp now = now();
+                Timestamp now = Clock.now();
                 for (Unit u : units) {
                     if (u.getId().equals(parentUnit.getId())) {
                         continue;
@@ -450,7 +451,7 @@ public final class CurrenciesCore {
                     }
                 }
 
-                Timestamp now = now();
+                Timestamp now = Clock.now();
                 int newAccountId;
                 try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO currencies_account (name, uuid, default_currency_id, date_created, date_modified)"
@@ -527,7 +528,7 @@ public final class CurrenciesCore {
         try (Connection conn = db.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Timestamp now = now();
+                Timestamp now = Clock.now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "UPDATE currencies_account SET default_currency_id = ?, date_modified = ? WHERE id = ?")) {
                     ps.setShort(1, currency.getId());
@@ -694,7 +695,7 @@ public final class CurrenciesCore {
                     throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
                 }
 
-                Timestamp now = now();
+                Timestamp now = Clock.now();
 
                 // bill: sender=fromAccount (the biller), recipient=toAccount (the one being billed),
                 // paid=NULL (pending)
@@ -818,7 +819,7 @@ public final class CurrenciesCore {
                 }
 
                 // Update the existing bill transaction with paid status
-                Timestamp now = now();
+                Timestamp now = Clock.now();
                 try (PreparedStatement ps = conn.prepareStatement(
                         "UPDATE currencies_transaction SET paid = ?, date_paid = ? WHERE id = ?")) {
                     ps.setBoolean(1, pay);
@@ -1496,13 +1497,6 @@ public final class CurrenciesCore {
     // =========================================================================
 
     /**
-     * Java has no direct equivalent of MySQL's NOW(); this centralizes the current-time Timestamp construction.
-     */
-    private static Timestamp now() {
-        return new Timestamp(System.currentTimeMillis());
-    }
-
-    /**
      * Compact all non-base holdings for the account into the base holding within the given connection/transaction.
      */
     private static int compactHoldings(Connection conn, Account account) throws SQLException {
@@ -1617,7 +1611,7 @@ public final class CurrenciesCore {
 
         repository.upsertHolding(conn, toAccount.getId(), base.getId(), toAmount);
 
-        Timestamp now = now();
+        Timestamp now = Clock.now();
 
         Transaction t = new Transaction();
         t.setSender(fromAccount);
@@ -1671,7 +1665,7 @@ public final class CurrenciesCore {
             }
             ps.setTimestamp(10, t.getDateCreated() != null
                     ? t.getDateCreated()
-                    : now());
+                    : Clock.now());
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
