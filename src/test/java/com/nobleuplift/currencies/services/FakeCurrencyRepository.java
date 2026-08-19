@@ -94,6 +94,18 @@ class FakeCurrencyRepository implements CurrencyRepository {
     }
 
     @Override
+    public List<Account> queryAccountsWithUuid(Connection conn) {
+        List<Account> result = new ArrayList<>();
+        for (Account a : accountsById.values()) {
+            if (a.getUuid() != null) {
+                result.add(a);
+            }
+        }
+        result.sort(Comparator.comparing(Account::getId));
+        return result;
+    }
+
+    @Override
     public Currency queryCurrencyById(Connection conn, short id) {
         return currenciesById.get(id);
     }
@@ -120,6 +132,28 @@ class FakeCurrencyRepository implements CurrencyRepository {
         int from = Math.min(offset, all.size());
         int to = Math.min(offset + 10, all.size());
         return new ArrayList<>(all.subList(from, to));
+    }
+
+    @Override
+    public List<Currency> queryAllCurrencies(Connection conn) {
+        List<Currency> all = new ArrayList<>();
+        for (Currency c : currenciesById.values()) {
+            if (c.getDateDeleted() == null) {
+                all.add(c);
+            }
+        }
+        all.sort(Comparator.comparing(Currency::getId));
+        return all;
+    }
+
+    @Override
+    public Currency queryGlobalDefaultCurrency(Connection conn) {
+        for (Currency c : currenciesById.values()) {
+            if (c.isGlobalDefault() && c.getDateDeleted() == null) {
+                return c;
+            }
+        }
+        return null;
     }
 
     @Override

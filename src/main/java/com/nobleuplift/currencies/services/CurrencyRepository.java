@@ -24,11 +24,17 @@ public interface CurrencyRepository {
 
     Account queryAccountById(Connection conn, int id) throws SQLException;
 
+    List<Account> queryAccountsWithUuid(Connection conn) throws SQLException;
+
     Currency queryCurrencyById(Connection conn, short id) throws SQLException;
 
     Currency queryCurrencyByAcronym(Connection conn, String acronym) throws SQLException;
 
     List<Currency> queryCurrenciesPage(Connection conn, int offset) throws SQLException;
+
+    List<Currency> queryAllCurrencies(Connection conn) throws SQLException;
+
+    Currency queryGlobalDefaultCurrency(Connection conn) throws SQLException;
 
     Unit queryUnitById(Connection conn, short id) throws SQLException;
 

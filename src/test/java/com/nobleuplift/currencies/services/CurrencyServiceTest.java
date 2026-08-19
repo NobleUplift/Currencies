@@ -316,6 +316,38 @@ class CurrencyServiceTest {
     }
 
     @Test
+    void getAllCurrenciesReturnsEveryNonDeletedCurrencyUnpaginated() throws CurrenciesException {
+        for (int i = 0; i < 15; i++) {
+            Currency c = Fixtures.currency((short) (100 + i), "C" + i, "Currency " + i, true);
+            repository.addCurrency(c);
+        }
+
+        List<Currency> all = currencyService.getAllCurrencies();
+
+        assertEquals(16, all.size(), "should return every currency, not just one page of 10");
+        assertTrue(all.contains(gbp));
+    }
+
+    @Test
+    void getGlobalDefaultCurrencyReturnsTheFlaggedCurrency() {
+        gbp.setGlobalDefault(true);
+
+        assertEquals(gbp, currencyService.getGlobalDefaultCurrency(true));
+    }
+
+    @Test
+    void getGlobalDefaultCurrencyThrowsWhenNoneIsSetAndExceptionRequested() {
+        CurrenciesRuntimeException e = assertThrows(CurrenciesRuntimeException.class,
+                () -> currencyService.getGlobalDefaultCurrency(true));
+        assertEquals("No global default currency has been set.", e.getMessage());
+    }
+
+    @Test
+    void getGlobalDefaultCurrencyReturnsNullWhenNoneIsSetAndExceptionNotRequested() {
+        assertNull(currencyService.getGlobalDefaultCurrency(false));
+    }
+
+    @Test
     void getCurrencyFromAcronymReturnsMatch() {
         assertEquals(gbp, currencyService.getCurrencyFromAcronym("GBP", true));
     }

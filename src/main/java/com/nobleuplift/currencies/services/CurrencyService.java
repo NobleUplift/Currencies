@@ -402,6 +402,28 @@ public class CurrencyService {
         }
     }
 
+    public List<Currency> getAllCurrencies() throws CurrenciesRuntimeException {
+        try (Connection conn = connectionProvider.getConnection()) {
+            return repository.queryAllCurrencies(conn);
+        } catch (SQLException e) {
+            throw new CurrenciesRuntimeException("Database error in getAllCurrencies: " + e.getMessage(), e);
+        }
+    }
+
+    public Currency getGlobalDefaultCurrency(boolean exception) throws CurrenciesRuntimeException {
+        try (Connection conn = connectionProvider.getConnection()) {
+            Currency currency = repository.queryGlobalDefaultCurrency(conn);
+            if (currency == null && exception) {
+                throw new CurrenciesRuntimeException("No global default currency has been set.");
+            }
+            return currency;
+        } catch (CurrenciesRuntimeException e) {
+            throw e;
+        } catch (SQLException e) {
+            throw new CurrenciesRuntimeException("Database error in getGlobalDefaultCurrency: " + e.getMessage(), e);
+        }
+    }
+
     public Currency getCurrencyFromAcronym(String acronym, boolean exception) throws CurrenciesRuntimeException {
         try (Connection conn = connectionProvider.getConnection()) {
             Currency currency = repository.queryCurrencyByAcronym(conn, acronym);

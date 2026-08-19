@@ -180,6 +180,42 @@ class CurrencyFormatterTest {
     }
 
     @Test
+    void resolveCurrencyBareIntegerUsesAccountDefaultCurrencyPrimeUnit() throws CurrenciesException {
+        Account account = Fixtures.account(1, "Alice");
+        account.setDefaultCurrency(gbp);
+
+        CurrencyDTO dto = formatter.resolveCurrency(account, "2");
+
+        assertEquals(gbp, dto.getCurrency());
+        assertEquals(penny, dto.getBaseUnit());
+        assertEquals(200L, dto.getBaseAmount());
+    }
+
+    @Test
+    void resolveCurrencyBareIntegerHonorsLeadingNegativeSign() throws CurrenciesException {
+        Account account = Fixtures.account(1, "Alice");
+        account.setDefaultCurrency(gbp);
+
+        CurrencyDTO dto = formatter.resolveCurrency(account, "-2");
+
+        assertEquals(-200L, dto.getBaseAmount());
+    }
+
+    @Test
+    void resolveCurrencyBareIntegerThrowsWhenAccountHasNoDefaultCurrency() {
+        Account account = Fixtures.account(1, "Alice");
+
+        CurrenciesException e = assertThrows(CurrenciesException.class, () -> formatter.resolveCurrency(account, "100"));
+        assertEquals("Either no symbol or no currency amount was provided.", e.getMessage());
+    }
+
+    @Test
+    void resolveCurrencyBareIntegerThrowsWhenAccountIsNull() {
+        CurrenciesException e = assertThrows(CurrenciesException.class, () -> formatter.resolveCurrency(null, "100"));
+        assertEquals("Either no symbol or no currency amount was provided.", e.getMessage());
+    }
+
+    @Test
     void resolveCurrencyRejectsStringWithNoRecognizedPrimeSymbol() {
         CurrenciesException e = assertThrows(CurrenciesException.class, () -> formatter.resolveCurrency(null, "z100"));
         assertEquals("No prime unit was located in your currency string.", e.getMessage());

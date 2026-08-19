@@ -81,6 +81,27 @@ public final class CurrenciesCore {
         transactionService = new TransactionService(databaseManager, repository, ledger, accountService, formatter, currencyService);
     }
 
+    /**
+     * Exposes the singleton services constructed by {@link #init}, for callers (e.g. an optional
+     * Vault economy adapter) that need to depend on them directly rather than through this static
+     * facade. Deliberately not used by anything in this class itself.
+     */
+    public static AccountService getAccountService() {
+        return accountService;
+    }
+
+    public static CurrencyService getCurrencyService() {
+        return currencyService;
+    }
+
+    public static TransactionService getTransactionService() {
+        return transactionService;
+    }
+
+    public static CurrencyFormatter getCurrencyFormatter() {
+        return formatter;
+    }
+
     // =========================================================================
     // Currency management
     // =========================================================================

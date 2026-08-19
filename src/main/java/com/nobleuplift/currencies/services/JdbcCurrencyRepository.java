@@ -71,6 +71,23 @@ public class JdbcCurrencyRepository implements CurrencyRepository {
         return null;
     }
 
+    public List<Account> queryAccountsWithUuid(Connection conn) throws SQLException {
+        List<Account> result = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT id, name, uuid FROM currencies_account WHERE uuid IS NOT NULL")) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Account a = new Account();
+                    a.setId(rs.getInt("id"));
+                    a.setName(rs.getString("name"));
+                    a.setUuid(rs.getString("uuid"));
+                    result.add(a);
+                }
+            }
+        }
+        return result;
+    }
+
     public Currency queryCurrencyById(Connection conn, short id) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT id, name, acronym, prefix, default_currency, date_created, date_modified, date_deleted"
@@ -112,6 +129,33 @@ public class JdbcCurrencyRepository implements CurrencyRepository {
             }
         }
         return result;
+    }
+
+    public List<Currency> queryAllCurrencies(Connection conn) throws SQLException {
+        List<Currency> result = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT id, name, acronym, prefix, default_currency, date_created, date_modified, date_deleted"
+                + " FROM currencies_currency WHERE date_deleted IS NULL")) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapCurrencyFromRow(rs));
+                }
+            }
+        }
+        return result;
+    }
+
+    public Currency queryGlobalDefaultCurrency(Connection conn) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT id, name, acronym, prefix, default_currency, date_created, date_modified, date_deleted"
+                + " FROM currencies_currency WHERE default_currency = 1 AND date_deleted IS NULL LIMIT 1")) {
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapCurrencyFromRow(rs);
+                }
+            }
+        }
+        return null;
     }
 
     public Unit queryUnitById(Connection conn, short id) throws SQLException {

@@ -16,7 +16,12 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import com.nobleuplift.currencies.vault.CurrenciesEconomy;
+
+import net.milkbowl.vault2.economy.Economy;
 
 /**
  * Created on 2015 April 22 at ‏‎08:58:50 PM.
@@ -63,11 +68,30 @@ public class Currencies extends JavaPlugin implements Listener {
 
 		if ("1.0.0".equals(configVersion)) {
 			migrateFromV100();
+			configVersion = "1.1.0";
 			getConfig().set("version", "1.1.0");
 			saveConfig();
 		}
 
+		if ("1.1.0".equals(configVersion)) {
+			migrateFromV110();
+			getConfig().set("version", "1.2.0");
+			saveConfig();
+		}
+
 		CurrenciesCore.init(db);
+
+		if (getServer().getPluginManager().getPlugin("VaultUnlocked") != null) {
+			getServer().getServicesManager().register(
+					Economy.class,
+					new CurrenciesEconomy(
+							CurrenciesCore.getAccountService(),
+							CurrenciesCore.getCurrencyService(),
+							CurrenciesCore.getTransactionService(),
+							CurrenciesCore.getCurrencyFormatter()),
+					this, ServicePriority.Normal);
+			getLogger().info(PREFIX + " Registered VaultUnlocked economy provider.");
+		}
 
 		Bukkit.getPluginManager().registerEvents(this, this);
 		getLogger().info(PREFIX + " Enabled.");
@@ -217,8 +241,26 @@ public class Currencies extends JavaPlugin implements Listener {
 		}
 	}
 
+	/**
+	 * Business accounts (opened via /currencies openaccount) previously had no UUID at all -- only
+	 * player accounts did. This backfills one for any existing business account, since Vault's
+	 * shared-account API is UUID-keyed and openAccount() now always assigns one to new accounts.
+	 * Reserved system accounts (IDs 1-4) are deliberately left alone: they were never business
+	 * accounts and Vault has no reason to address them.
+	 */
+	private void migrateFromV110() {
+		try (Connection conn = db.getConnection();
+		     Statement stmt = conn.createStatement()) {
+			stmt.execute("UPDATE `currencies_account` SET `uuid` = UUID() WHERE `uuid` IS NULL AND `id` > 4");
+		} catch (SQLException e) {
+			getLogger().severe("Migration from 1.1.0 failed: " + e.getMessage());
+			getServer().getPluginManager().disablePlugin(this);
+		}
+	}
+
 	@Override
 	public void onDisable() {
+		getServer().getServicesManager().unregisterAll(this);
 		if (db != null) {
 			db.close();
 		}

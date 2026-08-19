@@ -179,8 +179,41 @@ public class CurrencyFormatter {
         }
 
         String[] parts = working.replaceAll("([0-9-]+)", "|$1|").replaceAll("(^\\|*)|(\\|*$)", "").split("\\|");
-        if (parts.length == 0 || parts.length == 1) {
+        if (parts.length == 0) {
             throw new CurrenciesException("Either no symbol or no currency amount was provided.");
+        }
+
+        if (parts.length == 1) {
+            // No unit symbol at all: per CLAUDE.md, a bare integer is only ever valid in the prime
+            // unit of the player's own default currency -- there is no server-wide fallback here.
+            if (account == null || account.getDefaultCurrency() == null) {
+                throw new CurrenciesException("Either no symbol or no currency amount was provided.");
+            }
+
+            long partAmount;
+            try {
+                partAmount = Math.abs(Long.parseLong(parts[0]));
+            } catch (NumberFormatException e) {
+                throw new CurrenciesException(parts[0] + " could not be parsed into a number.");
+            }
+
+            Currency currency = account.getDefaultCurrency();
+            try (Connection conn = connectionProvider.getConnection()) {
+                Unit baseUnit = repository.queryBaseUnit(conn, currency);
+                if (baseUnit == null) {
+                    throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
+                }
+                Unit primeUnit = repository.queryPrimeUnit(conn, currency);
+                if (primeUnit == null) {
+                    throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no prime unit.");
+                }
+                long baseAmount = primeUnit.getBaseMultiples() != 0
+                        ? partAmount * primeUnit.getBaseMultiples()
+                        : partAmount;
+                return new CurrencyDTO(currency, baseUnit, isNegative ? baseAmount * -1 : baseAmount);
+            } catch (SQLException e) {
+                throw new CurrenciesRuntimeException("Database error in resolveCurrency: " + e.getMessage(), e);
+            }
         }
 
         try (Connection conn = connectionProvider.getConnection()) {

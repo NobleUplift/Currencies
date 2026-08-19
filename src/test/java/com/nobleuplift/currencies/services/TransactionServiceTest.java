@@ -479,7 +479,30 @@ class TransactionServiceTest {
     }
 
     @Test
+    void debitThrowsWhenAccountHasNoHoldingOfThatCurrency() {
+        when(accountService.getMinecraftCentralBank()).thenReturn(bank);
+        when(formatter.formatCurrency(gbp, 100L)).thenReturn("£1");
+
+        CurrenciesException e = assertThrows(CurrenciesException.class,
+                () -> transactionService.debit(alice, gbp, 100L));
+        assertEquals("You have 0p. You cannot debit £1 from Alice.", e.getMessage());
+    }
+
+    @Test
+    void debitThrowsWhenBalanceInsufficient() {
+        repository.addHolding(alice.getId(), penny, 50);
+        when(accountService.getMinecraftCentralBank()).thenReturn(bank);
+        when(formatter.formatCurrency(gbp, 100L)).thenReturn("£1");
+        when(formatter.formatCurrency(gbp, 50L)).thenReturn("50p");
+
+        CurrenciesException e = assertThrows(CurrenciesException.class,
+                () -> transactionService.debit(alice, gbp, 100L));
+        assertEquals("Cannot debit £1 from Alice because it is greater than 50p, your current balance.", e.getMessage());
+    }
+
+    @Test
     void debitHappyPathTransfersToCentralBank() throws CurrenciesException, SQLException {
+        repository.addHolding(alice.getId(), penny, 500);
         when(accountService.getMinecraftCentralBank()).thenReturn(bank);
         Transaction stub = new Transaction();
         when(ledger.privateTransferAmount(any(), eq(alice), eq(bank), eq(gbp), eq(100L))).thenReturn(stub);
@@ -487,8 +510,10 @@ class TransactionServiceTest {
 
         Transaction result = transactionService.debit(alice, gbp, 100L);
 
+        verify(ledger).compactHoldings(any(), eq(alice));
         assertEquals(5L, result.getId());
         assertEquals(TransactionType.DEBIT.getId(), result.getTypeId());
+        verify(jdbc.connection).commit();
     }
 
     // ---- bankrupt ----

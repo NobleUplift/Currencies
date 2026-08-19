@@ -1,6 +1,9 @@
 package com.nobleuplift.currencies.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,7 +12,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +33,7 @@ class AccountServiceTest {
     private AccountService accountService;
 
     private Account alice;
+    private Account guild;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -39,6 +45,10 @@ class AccountServiceTest {
         alice = Fixtures.account(1, "AliceTheMerchant");
         alice.setUuid("11111111-1111-1111-1111-111111111111");
         repository.addAccount(alice);
+
+        guild = Fixtures.account(50, "The Merchant Guild");
+        guild.setUuid("33333333-3333-3333-3333-333333333333");
+        repository.addAccount(guild);
     }
 
     // ---- openAccount ----
@@ -83,7 +93,21 @@ class AccountServiceTest {
 
         assertEquals(50, account.getId());
         assertEquals("The Merchant Guild", account.getName());
-        assertNull(account.getUuid());
+        assertNotNull(account.getUuid());
+        assertDoesNotThrow(() -> java.util.UUID.fromString(account.getUuid()), "should be assigned a real random UUID");
+        verify(jdbc.connection).commit();
+    }
+
+    @Test
+    void openAccountThreeArgOverloadUsesTheCallerSuppliedUuid() throws CurrenciesException, SQLException {
+        when(jdbc.resultSet.next()).thenReturn(false, true);
+        when(jdbc.generatedKeys.next()).thenReturn(true);
+        when(jdbc.generatedKeys.getInt(1)).thenReturn(51);
+        String uuid = "22222222-2222-2222-2222-222222222222";
+
+        Account account = accountService.openAccount("The Merchant Guild", uuid, "AliceTheMerchant");
+
+        assertEquals(uuid, account.getUuid());
         verify(jdbc.connection).commit();
     }
 
@@ -183,5 +207,140 @@ class AccountServiceTest {
     @Test
     void getAccountFromUniqueIdReturnsNullWhenMissingAndExceptionNotRequested() {
         assertNull(accountService.getAccountFromUniqueId("does-not-exist", false));
+    }
+
+    // ---- getAllAccountsWithUuid ----
+
+    @Test
+    void getAllAccountsWithUuidReturnsOnlyAccountsThatHaveOne() {
+        Account noUuid = Fixtures.account(2, "Bob");
+        repository.addAccount(noUuid);
+
+        List<Account> result = accountService.getAllAccountsWithUuid();
+
+        assertTrue(result.contains(alice));
+        assertFalse(result.contains(noUuid));
+    }
+
+    // ---- renameAccount ----
+
+    @Test
+    void renameAccountRejectsNameAlreadyTakenByAnotherAccount() throws SQLException {
+        when(jdbc.resultSet.next()).thenReturn(true);
+
+        assertFalse(accountService.renameAccount(alice, "TakenName"));
+        verify(jdbc.connection).rollback();
+    }
+
+    @Test
+    void renameAccountUpdatesNameAndCommits() throws SQLException {
+        when(jdbc.resultSet.next()).thenReturn(false);
+
+        assertTrue(accountService.renameAccount(alice, "AliceTheTrader"));
+        verify(jdbc.connection).commit();
+    }
+
+    // ---- deleteAccount ----
+
+    @Test
+    void deleteAccountReturnsFalseWhenForeignKeyBlocksIt() throws SQLException {
+        when(jdbc.plainStatement.executeUpdate()).thenThrow(new SQLException("FK violation"));
+
+        assertFalse(accountService.deleteAccount(alice));
+        verify(jdbc.connection).rollback();
+    }
+
+    @Test
+    void deleteAccountReturnsTrueWhenAccountIsUnused() throws SQLException {
+        // First executeUpdate() call is the Holder delete, second is the account delete itself.
+        when(jdbc.plainStatement.executeUpdate()).thenReturn(0, 1);
+
+        assertTrue(accountService.deleteAccount(alice));
+        verify(jdbc.connection).commit();
+    }
+
+    @Test
+    void deleteAccountReturnsFalseWhenNoRowWasDeleted() throws SQLException {
+        when(jdbc.plainStatement.executeUpdate()).thenReturn(0, 0);
+
+        assertFalse(accountService.deleteAccount(alice));
+        verify(jdbc.connection).commit();
+    }
+
+    // ---- isOwner / isMember / addOwner / removeOwner ----
+
+    @Test
+    void isOwnerReturnsTrueOnlyForADirectLengthOneHolderRow() throws SQLException {
+        when(jdbc.resultSet.next()).thenReturn(true);
+
+        assertTrue(accountService.isOwner(alice, guild));
+        verify(jdbc.plainStatement).setInt(1, alice.getId());
+        verify(jdbc.plainStatement).setInt(2, guild.getId());
+    }
+
+    @Test
+    void isOwnerReturnsFalseWhenNoMatchingRow() throws SQLException {
+        when(jdbc.resultSet.next()).thenReturn(false);
+
+        assertFalse(accountService.isOwner(alice, guild));
+    }
+
+    @Test
+    void isMemberReturnsTrueForAnyPositiveDepthRelationship() throws SQLException {
+        when(jdbc.resultSet.next()).thenReturn(true);
+
+        assertTrue(accountService.isMember(alice, guild));
+    }
+
+    @Test
+    void addOwnerInsertsHolderRowAndCommits() throws SQLException {
+        accountService.addOwner(alice, guild);
+
+        verify(jdbc.connection).commit();
+    }
+
+    @Test
+    void removeOwnerDeletesHolderRowAndCommits() throws SQLException {
+        accountService.removeOwner(alice, guild);
+
+        verify(jdbc.connection).commit();
+    }
+
+    // ---- getOwnedAccounts / getMemberAccounts ----
+    // Not currently called by the Vault adapter's accountsAccessTo (the pinned VaultUnlockedAPI
+    // 2.16 has no UUID-returning accountsWithAccessTo to back with these), but kept ready for when
+    // that lands in a later API version.
+
+    @Test
+    void getOwnedAccountsMapsHolderJoinRowsToAccounts() throws SQLException {
+        ResultSet rs = RowResultSet.of(
+                RowResultSet.row("id", 50, "name", "The Merchant Guild", "uuid", "33333333-3333-3333-3333-333333333333"));
+        when(jdbc.plainStatement.executeQuery()).thenReturn(rs);
+
+        List<Account> result = accountService.getOwnedAccounts(alice);
+
+        assertEquals(1, result.size());
+        assertEquals("The Merchant Guild", result.get(0).getName());
+        assertEquals("33333333-3333-3333-3333-333333333333", result.get(0).getUuid());
+    }
+
+    @Test
+    void getOwnedAccountsReturnsEmptyListWhenNoneExist() throws SQLException {
+        ResultSet rs = RowResultSet.empty();
+        when(jdbc.plainStatement.executeQuery()).thenReturn(rs);
+
+        assertTrue(accountService.getOwnedAccounts(alice).isEmpty());
+    }
+
+    @Test
+    void getMemberAccountsMapsHolderJoinRowsToAccounts() throws SQLException {
+        ResultSet rs = RowResultSet.of(
+                RowResultSet.row("id", 50, "name", "The Merchant Guild", "uuid", "33333333-3333-3333-3333-333333333333"));
+        when(jdbc.plainStatement.executeQuery()).thenReturn(rs);
+
+        List<Account> result = accountService.getMemberAccounts(alice);
+
+        assertEquals(1, result.size());
+        assertEquals("The Merchant Guild", result.get(0).getName());
     }
 }

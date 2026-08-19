@@ -417,6 +417,23 @@ public class TransactionService {
         try (Connection conn = connectionProvider.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                ledger.compactHoldings(conn, account);
+
+                Unit baseUnit = repository.queryBaseUnit(conn, currency);
+                if (baseUnit == null) {
+                    throw new CurrenciesRuntimeException("Currency " + currency.getAcronym() + " has no base.");
+                }
+
+                Holding baseHolding = repository.queryBaseHolding(conn, account.getId(), baseUnit.getId());
+                if (baseHolding == null) {
+                    throw new CurrenciesException("You have 0" + baseUnit.getSymbol() + ". You cannot debit "
+                            + formatter.formatCurrency(currency, baseAmount) + " from " + account.getName() + ".");
+                } else if (baseHolding.getAmount() < baseAmount) {
+                    throw new CurrenciesException("Cannot debit " + formatter.formatCurrency(currency, baseAmount) + " from "
+                            + account.getName() + " because it is greater than "
+                            + formatter.formatCurrency(currency, baseHolding.getAmount()) + ", your current balance.");
+                }
+
                 Transaction t = ledger.privateTransferAmount(conn, account, bank, currency, baseAmount);
                 t.setTypeId(TransactionType.DEBIT.getId());
                 long txId = ledger.insertTransaction(conn, t);

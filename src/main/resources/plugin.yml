@@ -7,6 +7,8 @@ website: ${plugin.website}
 
 main: ${plugin.main}
 
+softdepend: [VaultUnlocked]
+
 commands:
     currencies:
         description: The central command for Currencies.
